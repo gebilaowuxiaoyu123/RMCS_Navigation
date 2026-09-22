@@ -50,4 +50,5 @@ python3 tools/virtual_chassis.py --rate 50                 # TF 提到 50 Hz
 
 ### 详细说明
 
-见 [../Foxglove观测指南.md](../Foxglove观测指南.md)
+观测流程（连接 Foxglove、面板配置、怎么看卡顿）见
+[../任务规划.md](../任务规划.md) §3 与文末「附：虚拟底盘脚本说明」。
