@@ -20,8 +20,7 @@
 pkill -f "static_transform_publisher 0 0 0 0 0 0 odom base_link"
 
 # ② 启动
-bash -lc 'cd /workspaces/RMCS/rmcs_ws && source install/setup.bash \
-  && python3 /workspaces/RMCS/docs/zh-cn/算法组考核/tools/virtual_chassis.py'
+python3 /workspaces/RMCS/docs/zh-cn/算法组考核/tools/virtual_chassis.py
 ```
 
 ### 两种模式
