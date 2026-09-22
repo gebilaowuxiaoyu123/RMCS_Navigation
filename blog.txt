@@ -10,9 +10,20 @@
 - 单次规划（起点 world(0,0) -> 终点 world(20,0)）：
   planning_time 1.03 ms，路径 823 点 / 41.53 m / 【368 个转折】
   -> 路径是格子级锯齿折线，这就是跟踪卡顿的根源，选 Smac2D 的依据落实了
-- 链路频率：/plan 0.99 Hz（行为树锁 1Hz）、/cmd_vel 19.9 Hz（配置 20Hz）
+- 链路频率：/plan 0.99 Hz（行为树锁 1Hz）、/cmd_vel 平均 19.9 Hz（配置 20Hz）
 - 代价地图：致命 33.6% / 膨胀 35.1% / 自由 31.3%
 - 机器人起点 (0,0) 代价 89（落在膨胀区，距障碍很近）
+
+[重要发现] 实测到"卡顿"的量化证据
+- 持续导航时 controller_server 反复报：
+  "Control loop missed its desired rate of 20.0000 Hz. Current loop rate is 15.5~15.9 Hz"
+- 局部控制器(MPPI)算不过来，实际只跑到约 15.8 Hz（缺 21%）
+- 注意这是【局部控制器】丢帧，不是全局规划器；但与"无明显卡顿"验收直接相关
+- 待排查：MPPI 负载(batch_size 1400/time_steps 50/5 critics) → 先降 batch_size 对比
+
+[环境局限] 静态环境下 navigate_to_pose 必然失败
+- TF 静态 → 机器人不动 → 进度检查 4 秒判"无进展" → 重试 → Goal failed
+- 这是预期行为不是故障；要看完整导航成功需接实车或上仿真
 
 [踩坑] 导航进程容易遗留
 - 残留进程导致节点重复实例 + foxglove_bridge 端口(8765)被占
@@ -25,4 +36,5 @@
 
 [下一步]
 - 备份 NavFn 配置 -> 切 SmacPlanner2D -> 同一起终点复测对比转折点数
-- 处理 inflation_radius(0.5) 偏大 + 全局/局部 footprint 不一致(0.2 vs 0.495)2、了解如何在仿真环境下运行和观察
+- 处理 inflation_radius(0.5) 偏大 + 全局/局部 footprint 不一致(0.2 vs 0.495)
+- 排查控制环丢帧：降 batch_size(1400->800) 看能否恢复 20Hz2、了解如何在仿真环境下运行和观察
