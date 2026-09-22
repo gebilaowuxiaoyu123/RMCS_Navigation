@@ -8,9 +8,11 @@
 | 文件 | 用途 |
 |---|---|
 | **[导航提交作业.md](导航提交作业.md)** | ⭐ **提交报告（验收用）**：任务要求、方案选型论证、实施过程、结果数据、问题与解决、提交信息 |
+| **[Foxglove观测指南.md](Foxglove观测指南.md)** | 🆕 **怎么看动态过程**：连接步骤、面板与话题配置、"卡顿"的三个证据、仿真方案对比 |
 | [实验记录.md](实验记录.md) | 逐次实验的原始数据与观察（可复现） |
 | [任务规划.md](任务规划.md) | 过程规划与操作教程：认知准备、环境准备、五阶段执行计划、命令速查、检查清单 |
 | [config/](config/) | 配置快照（改动前后对比，作为报告证据） |
+| [tools/](tools/) | 🆕 观测工具（`virtual_chassis.py`：让静态环境动起来） |
 | [assets/](assets/) | 演示材料（路径可视化、原始输出、录屏） |
 
 ## 一页速览
@@ -43,12 +45,17 @@
 RMCS_Navigation/                  ← 本仓库
 ├── README.md                     ← 本文件
 ├── 导航提交作业.md                ← 提交报告（验收用）
+├── Foxglove观测指南.md            ← 怎么看动态过程
 ├── 实验记录.md                    ← 逐次实验原始数据
 ├── 任务规划.md                    ← 过程规划与教程
+├── blog.txt                      ← 个人日志（由作者本人维护）
 ├── config/                       ← 配置快照
 │   ├── motion.yaml.navfn-baseline   切换前的 NavFn 基线
 │   ├── motion.xml.navfn-baseline    行为树基线
 │   └── README.md                    快照说明
+├── tools/                        ← 观测工具
+│   ├── virtual_chassis.py           虚拟底盘（让静态环境动起来）
+│   └── README.md                    工具说明
 └── assets/                       ← 演示材料
     ├── navfn_baseline_path.png      基线路径可视化
     ├── navfn_baseline_raw.txt       基线原始输出（823 路径点）
