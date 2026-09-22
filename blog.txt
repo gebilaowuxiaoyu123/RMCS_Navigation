@@ -1,0 +1,28 @@
+9.22
+1、知道文件夹架构，如何运行与调参。先在本地跑通一次，看一下执行效果。
+[完成] 跑通静态导航栈（无需机器人）
+- 启动：ros2 launch rmcs-navigation static.launch.yaml
+- 节点全 active：bt_navigator / planner_server / controller_server / global_map / local_map
+- 基线确认：ros2 param get /planner_server GridBased.plugin -> nav2_navfn_planner::NavfnPlanner
+- 地图：rmuc-v2.png 292x161 @ 0.1 m/cell（29.2m x 16.1m）
+
+[完成] 看执行效果（实测数据）
+- 单次规划（起点 world(0,0) -> 终点 world(20,0)）：
+  planning_time 1.03 ms，路径 823 点 / 41.53 m / 【368 个转折】
+  -> 路径是格子级锯齿折线，这就是跟踪卡顿的根源，选 Smac2D 的依据落实了
+- 链路频率：/plan 0.99 Hz（行为树锁 1Hz）、/cmd_vel 19.9 Hz（配置 20Hz）
+- 代价地图：致命 33.6% / 膨胀 35.1% / 自由 31.3%
+- 机器人起点 (0,0) 代价 89（落在膨胀区，距障碍很近）
+
+[踩坑] 导航进程容易遗留
+- 残留进程导致节点重复实例 + foxglove_bridge 端口(8765)被占
+- 每次实验前必须 pkill 清理，否则会被假象误导（AGENTS.md 早有警告）
+
+[产物]
+- assets/navfn_baseline_path.png  基线路径可视化（可见明显锯齿）
+- assets/navfn_baseline_raw.txt   原始输出
+- 实验记录.md                     完整数据与复现方法
+
+[下一步]
+- 备份 NavFn 配置 -> 切 SmacPlanner2D -> 同一起终点复测对比转折点数
+- 处理 inflation_radius(0.5) 偏大 + 全局/局部 footprint 不一致(0.2 vs 0.495)2、了解如何在仿真环境下运行和观察
