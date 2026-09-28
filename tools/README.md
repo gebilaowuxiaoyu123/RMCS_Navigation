@@ -6,6 +6,7 @@
 |---|---|
 | [`plan_metrics.py`](#plan_metrics-py) | **测量路径质量与更新节奏** —— 判断"卡顿"的仪器 |
 | [`costmap_probe.py`](#costmap_probe-py) | **读代价地图**（正确处理 int8）+ 回读参数，检"假生效" |
+| [`plot_path.py`](#plot_path-py) | **画路径对比图**：把规划结果叠加到地图上，底图参数自动读 yaml |
 | [`virtual_chassis.py`](#virtual_chassis-py) | **虚拟底盘**：让静态环境动起来，可在 Foxglove 看动态过程 |
 
 ---
@@ -108,6 +109,80 @@ python3 tools/costmap_probe.py --node /global_costmap/global_costmap
 | **自由**占比很低 | 代价地图偏保守，规划器可用的"廉价空间"窄 → 路径容易贴障碍 |
 | 起点代价很高 | 起点离障碍近 → 可能触发"起步就贴着膨胀区"的行为 |
 | 回读参数 ≠ yaml 里的值 | **参数假生效**，需要排查参数名/嵌套层级 |
+
+---
+
+## plot_path.py
+
+### 为什么需要
+
+验收要"效果演示"，而**一张带路径的图**比一堆数字直观得多。
+但路径图不是自动产生的：
+
+```
+底图（maps/*.png） + 路径（该次运行的规划结果） = 带路径的对比图
+      ↑ yaml 决定                                     ↑ 必须跑 + 画
+```
+
+⚠️ **改 yaml 只能换底图，不会凭空产生路径** —— 路径是规划器**运行时**算出来的
+（`/compute_path_to_pose` 的输出），必须跑一次并保存下来才能画。
+
+### 特点
+
+- **自动读 yaml**：分辨率、原点、图片名都从 `maps/<名字>.yaml` 读。
+  所以你改了 yaml（换地图 / 改分辨率），脚本**自动跟随**，不用改代码。
+- **多路径叠加**：同一张底图画多条路径，直接对比换规划器前后的差异。
+- **自动统计**：输出路径点数、长度、转折数、转折密度（turns/m）。
+
+### 用法
+
+```bash
+# ① 先跑规划，把输出存下来
+ros2 action send_goal /compute_path_to_pose nav2_msgs/action/ComputePathToPose \
+  "{goal: {header: {frame_id: world}, pose: {position: {x: 20.0, y: 0.0, z: 0.0}}}, use_start: false}" \
+  > /tmp/plan_navfn.txt
+
+# ② 画一张
+python3 tools/plot_path.py assets/navfn_baseline_path.png "NavFn:/tmp/plan_navfn.txt"
+
+# ③ 换规划器后再存一份，两张画在一起对比（验收"效果演示"最有力的材料）
+python3 tools/plot_path.py assets/plan_compare.png \
+  "NavFn:/tmp/plan_navfn.txt" "Smac2D:/tmp/plan_smac2d.txt"
+
+# ④ 换底图（会读对应 yaml 的参数）
+python3 tools/plot_path.py assets/plan_zhandui.png --map 战队 "NavFn:/tmp/plan_navfn.txt"
+
+# ⑤ 调放大倍数（默认 3）
+python3 tools/plot_path.py out.png --scale 4 "NavFn:/tmp/plan_navfn.txt"
+```
+
+### 输出示例
+
+```
+底图      : rmuc-v2.png
+几何参数  : resolution=0.1  origin=(-4.3, -8.0)  <- 读自 rmuc.yaml
+尺寸      : 292x161 px  ->  世界 29.2 x 16.1 m
+
+  NavFn       823 点   41.53 m   368 转折   8.86 turns/m
+
+已保存: assets/navfn_baseline_path.png
+```
+
+### 图上元素的含义
+
+| 元素 | 含义 |
+|---|---|
+| 黑白底图 | `maps/*.png`（黑 = 障碍，白 = 可通行） |
+| **绿点** | 路径起点 |
+| **红点** | 路径终点 |
+| **彩色线** | 规划路径（多条时按 红/蓝/绿/紫 区分） |
+| 左上文字 | 图例：路径长度、转折数、转折密度 |
+
+### 常用地图名
+
+`rmuc`（默认，→ rmuc-v2.png）、`rmul`、`战队`、`empty`
+
+> 地图名写错时会提示可用列表。
 
 ---
 
