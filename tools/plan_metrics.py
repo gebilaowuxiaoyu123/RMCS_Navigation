@@ -51,26 +51,51 @@ def heading(a, b):
 
 
 def measure(path_msg, turn_threshold_deg):
-    """返回 (点数, 长度m, 平均点距m, 转折数)"""
+    """测量一条路径的几何质量。
+
+    返回 dict：
+        n        点数
+        length   长度 (m)
+        spacing  平均点距 (m)
+        turns    拐角 > turn_threshold_deg 的个数
+        density  转折密度 turns/m
+        max_turn 最大单次转角 (度)      <- 反映"有没有急转"
+        mean_turn 平均转角 (度，只统计 >阈值的)
+        sum_turn 转角总和 (度)          <- 反映"整体绕不绕"
+        sharp    急转(>45°)次数          <- 最能反映"顿挫感"
+        gentle   缓转(<=15°)个数
+    """
     pts = [(p.pose.position.x, p.pose.position.y) for p in path_msg.poses]
     if len(pts) < 2:
-        return len(pts), 0.0, 0.0, 0
+        return {'n': len(pts), 'length': 0.0, 'spacing': 0.0, 'turns': 0,
+                'density': 0.0, 'max_turn': 0.0, 'mean_turn': 0.0,
+                'sum_turn': 0.0, 'sharp': 0, 'gentle': 0}
 
     length = 0.0
     for i in range(1, len(pts)):
         length += math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])
 
-    turns = 0
+    # 逐个拐角算转角
+    angles = []
     for i in range(2, len(pts)):
-        a1 = heading(pts[i - 2], pts[i - 1])
-        a2 = heading(pts[i - 1], pts[i])
-        d = abs(math.degrees(a2 - a1))
-        d = min(d, 360.0 - d)
-        if d > turn_threshold_deg:
-            turns += 1
+        d = abs(math.degrees(heading(pts[i - 1], pts[i]) - heading(pts[i - 2], pts[i - 1])))
+        angles.append(min(d, 360.0 - d))
 
+    over = [a for a in angles if a > turn_threshold_deg]
     spacing = length / (len(pts) - 1) if len(pts) > 1 else 0.0
-    return len(pts), length, spacing, turns
+
+    return {
+        'n': len(pts),
+        'length': length,
+        'spacing': spacing,
+        'turns': len(over),
+        'density': (len(over) / length) if length > 0 else 0.0,
+        'max_turn': max(angles) if angles else 0.0,
+        'mean_turn': (sum(over) / len(over)) if over else 0.0,
+        'sum_turn': sum(over),
+        'sharp': len([a for a in angles if a > 45.0]),
+        'gentle': len([a for a in angles if a <= 15.0]),
+    }
 
 
 class PlanMetrics(Node):
@@ -87,6 +112,9 @@ class PlanMetrics(Node):
         self.lengths = []
         self.turns = []
         self.densities = []
+        self.max_turns = []
+        self.sum_turns = []
+        self.sharp = []
 
         # BEST_EFFORT + VOLATILE 的订阅能兼容可靠/尽力、易失/暂存的发布者
         qos = QoSProfile(
@@ -103,13 +131,15 @@ class PlanMetrics(Node):
         self.last_time = now
         self.count += 1
 
-        npts, length, spacing, turns = measure(msg, self.turn_threshold_deg)
-        density = (turns / length) if length > 0 else 0.0
+        m = measure(msg, self.turn_threshold_deg)
 
-        self.points.append(npts)
-        self.lengths.append(length)
-        self.turns.append(turns)
-        self.densities.append(density)
+        self.points.append(m['n'])
+        self.lengths.append(m['length'])
+        self.turns.append(m['turns'])
+        self.densities.append(m['density'])
+        self.max_turns.append(m['max_turn'])
+        self.sum_turns.append(m['sum_turn'])
+        self.sharp.append(m['sharp'])
 
         gap_flag = ''
         if dt == dt:  # 非 nan
@@ -120,8 +150,9 @@ class PlanMetrics(Node):
 
         dt_s = f'{dt:5.2f}s' if dt == dt else '  --  '
         print(
-            f'#{self.count:<4d} dt={dt_s}  pts={npts:<5d} len={length:7.2f}m  '
-            f'spacing={spacing:5.3f}m  turns={turns:<5d} turns/m={density:6.2f}{gap_flag}',
+            f'#{self.count:<4d} dt={dt_s}  pts={m["n"]:<5d} len={m["length"]:7.2f}m  '
+            f'turns={m["turns"]:<4d} {m["density"]:5.2f}/m  '
+            f'max={m["max_turn"]:5.1f}°  sharp={m["sharp"]:<3d}{gap_flag}',
             flush=True,
         )
 
@@ -129,6 +160,7 @@ class PlanMetrics(Node):
         if not self.points:
             print('\n没收到任何路径。检查：话题名对不对？导航栈起了吗？')
             return
+        n = len(self.points)
         print(f'\n===== 汇总（共 {self.count} 条）=====')
         if self.dts:
             mean = sum(self.dts) / len(self.dts)
@@ -139,15 +171,24 @@ class PlanMetrics(Node):
             )
         else:
             print('dt        : （只收到 1 条，无法统计）')
-        print(f'路径点数  : mean {sum(self.points) / len(self.points):.1f}')
-        print(f'路径长度  : mean {sum(self.lengths) / len(self.lengths):.2f} m')
-        print(f'转折数    : mean {sum(self.turns) / len(self.turns):.1f}')
-        print(f'转折密度  : mean {sum(self.densities) / len(self.densities):.2f} turns/m')
+        print(f'路径点数  : mean {sum(self.points) / n:.1f}')
+        print(f'路径长度  : mean {sum(self.lengths) / n:.2f} m')
+        print(f'转折数    : mean {sum(self.turns) / n:.1f}')
+        print(f'转折密度  : mean {sum(self.densities) / n:.2f} turns/m')
+        print(f'最大转角  : mean {sum(self.max_turns) / n:.1f}°   <- 有急转说明路径不匀')
+        print(f'转角总和  : mean {sum(self.sum_turns) / n:.0f}°  <- 越小越直')
+        print(f'急转(>45°): mean {sum(self.sharp) / n:.1f} 次  <- 最能反映顿挫感')
         print(f'空档次数  : {self.gaps}  (dt > {2.0 * self.expected_dt:.1f}s)')
         print()
         print('怎么读：')
         print('  dt 的 std 大 / 有空档 -> 规划卡顿（规划器慢或被阻塞）')
         print('  转折密度高（>4）      -> 路径卡顿（跟踪时会反复降速）')
+        print('  有急转(sharp>0)       -> 该处必须减速，是"一顿一顿"的直接来源')
+        print()
+        print('  ⚠️ 注意"转折数少"不等于"更平滑"：')
+        print('     ThetaStar 转折少但转角大（少而尖），')
+        print('     Smac2D 转折略多但转角小（多而缓）。')
+        print('     -> 判断平滑度要看 max / sum / sharp，别只看转折数。')
 
 
 def main():

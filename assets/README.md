@@ -9,6 +9,23 @@
 |---|---|---|
 | `navfn_baseline_path.png` | **NavFn 基线路径图**：地图 + 路径 + 起终点，可见锯齿折线 | ✅ |
 | `navfn_baseline_raw.txt` | 该次规划的**原始输出**（含 823 个路径点，用于复现） | ✅ |
+| `compare_navfn_vs_smac2d.png` | **NavFn vs Smac2D 对比图**（红=NavFn 锯齿，蓝=Smac2D 平滑） | ✅ |
+
+### `compare_navfn_vs_smac2d.png` —— 验收"效果演示"的主力材料
+
+同一组起终点（`world(0,0)` → `(20,0)`）叠在同一张图上：
+
+| 线 | 规划器 | 长度 | 转折数 | 最大转角 | 急转(>45°) |
+|---|---|---|---|---|---|
+| **红线** | NavFn | 41.53 m | 368 | **179.8°** | **103 次** |
+| **蓝线** | Smac2D | **35.55 m** | 43 | **10.1°** | **0 次** |
+
+视觉上一眼可见：红线**锯齿、贴障碍、绕远**；蓝线**平滑、走通道中间、更短**。
+
+> ⭐这张图还隐含一个关键认知：**转折数少 ≠ 更平滑**。
+> ThetaStar 的转折数（35）比 Smac2D（43）还少，但拐得硬（最大 63°）。
+> 详见 [实验记录.md](../实验记录.md) 的 9.28 节与
+> [任务规划.md](../任务规划.md) 阶段 4.5。
 
 ### `navfn_baseline_path.png` 里画的是什么
 
@@ -36,8 +53,8 @@
 
 | 建议命名 | 内容 | 怎么来 |
 |---|---|---|
-| `smac2d_baseline_path.png` | SmacPlanner2D 的路径图（同样起终点） | 换规划器后跑一次，用 `plot_path.py` 画 |
-| `plan_compare.png` | **两者叠在同一张图上对比** | `plot_path.py` 一次传两条路径 |
+| `theta_star_path.png` | ThetaStar 的路径图（补齐三种对比） | 切到 ThetaStar 跑一次，用 `plot_path.py` 画 |
+| `compare_three.png` | **三种画在同一张图** | `plot_path.py` 一次传三条路径 |
 | `plan_rate.png` | `/plan` 频率对比截图 | `ros2 topic hz /plan` |
 | `costmap.png` | 代价地图分布 | `costmap_probe.py` 输出 |
 | `demo_*.mp4` / `.gif` | 运行录屏 | Foxglove |
