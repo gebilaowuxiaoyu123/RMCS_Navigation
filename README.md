@@ -34,6 +34,7 @@
 | 项 | 状态 |
 |---|---|
 | 依赖栈 + 环境搭建（补齐缺失依赖） | ✅ |
+| 真车链路修复（补编译 `rmcs_localization`，治 `base_link` 断链） | ✅ |
 | 基线确认（现用 `NavfnPlanner`） | ✅ |
 | 地图确认（`rmuc-v2.png`，29.2 × 16.1 m） | ✅ |
 | 无机器人测试环境（`static.launch.yaml`，5 节点 `active`） | ✅ |
@@ -92,4 +93,8 @@ RMCS_Navigation/                  ← 本仓库
 
 ## 注意
 
-- 依赖栈 `rmcs_ws/src/rmcs-navigation-deps/` 是第三方代码，**不入任何作业仓**（已在 `.gitignore` 中）。
+- 依赖栈 `rmcs_ws/src/rmcs-navigation-deps/` 是第三方代码，**不入任何作业仓**（已在 `.gitignore` 中）。- ⚠️ **真车 `sensor.launch.yaml` 硬依赖 `rmcs_localization`**。该包不在默认单包编译范围内，
+  漏编会**整个 sensor 栈起不来** —— 表现就是“无 TF / 无 costmap / 无 `/plan`”、
+  `base_link` 断链。修法与验证见 [实验记录.md](实验记录.md) 2026-09-29 条。
+- ⚠️ **实车导航入口不带 `foxglove_bridge`**（只有 `static` / `recall` 带），
+  所以“Foxglove 里没数据”不等于“导航没跑”。详见 [任务规划.md](任务规划.md) §3.7。
