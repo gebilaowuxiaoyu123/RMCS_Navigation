@@ -164,10 +164,10 @@ python3 tools/plot_path.py assets/plan_zhandui.png --map 战队 "NavFn:/tmp/plan
 python3 tools/plot_path.py out.png --scale 4 "NavFn:/tmp/plan_navfn.txt"
 
 # ⑥ 只要地图 + 世界坐标网格（不给路径也能画，用于挑目标点）
-python3 tools/plot_path.py assets/map_rmuc_grid.png --grid 2 --scale 3
+python3 tools/plot_path.py assets/map_zhandui_grid.png --map 战队 --grid 2 --scale 3
 
 # ⑦ 标出候选目标点（带序号的黄点），确认没落在障碍上
-python3 tools/plot_path.py assets/map_rmuc_pick.png --grid 2 --scale 3 --mark "1.5,0;18,3"
+python3 tools/plot_path.py /tmp/zd_pick.png --map 战队 --grid 2 --scale 3 --mark "14,0;23,0"
 ```
 
 ### 输出示例

@@ -67,7 +67,7 @@ RMCS_Navigation/                  ← 本仓库
     ├── path_theta_star.png          ⭐ 演示套图：ThetaStar 单张
     ├── path_smac2d.png              ⭐ 演示套图：Smac2D 单张（选中）
     ├── path_compare_three.png       ⭐ 演示套图：三种汇总对比（主力材料）
-    ├── map_rmuc_grid.png            🗺️ 标点用：带世界坐标网格的底图
+    ├── map_zhandui_grid.png         🗺️ 标点用：战队.png（现场图）带世界坐标网格
     ├── navfn_baseline_path.png      早期素材：9.22 首测基线图
     ├── compare_navfn_vs_smac2d.png  早期素材：两规划器对比（前身）
     ├── navfn_baseline_raw.txt       基线原始输出（823 路径点，可复现）

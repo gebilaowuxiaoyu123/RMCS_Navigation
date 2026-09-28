@@ -21,7 +21,7 @@
 
 | 文件 | 内容 |
 |---|---|
-| `map_rmuc_grid.png` | **带世界坐标网格的场地底图**（每 2 m 一格，格线上标注世界坐标） |
+| `map_zhandui_grid.png` | **`战队.png`（现场验收图）带世界坐标网格**，每 2 m 一格，格线上标注世界坐标 |
 
 用途：**上车前挑两个目标点，并确认没标在障碍上**。做法见
 [任务规划.md](../任务规划.md) §十「怎么在地图上标目标点」。
@@ -29,10 +29,13 @@
 ```bash
 cd /workspaces/RMCS/docs/zh-cn/算法组考核
 # ① 生成带网格的底图（上边数字 = x，左边数字 = y）
-python3 tools/plot_path.py assets/map_rmuc_grid.png --grid 2 --scale 3
+python3 tools/plot_path.py assets/map_zhandui_grid.png --map 战队 --grid 2 --scale 3
 # ② 换成你自己选的两个点，标出来确认（坐标因人而异，这个输出不入库）
-python3 tools/plot_path.py assets/map_rmuc_pick.png --grid 2 --scale 3 --mark "1.5,0;18,3"
+python3 tools/plot_path.py /tmp/zd_pick.png --map 战队 --grid 2 --scale 3 --mark "14,0;23,0"
 ```
+
+> `战队.png` 是**实扫半场图**（343×110 px @ 0.1 m，世界 x∈[-10, 24.3] y∈[-4, 7.0]）。
+> 左边噪点多、很挤；**右边 x≈10~24 是开阔区**，挑点优先往右挑。
 
 视觉上一眼可见：
 
