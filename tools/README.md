@@ -135,6 +135,9 @@ python3 tools/costmap_probe.py --node /global_costmap/global_costmap
 - **自动统计**：输出路径点数、长度、转折数、转折密度（turns/m）。
 - **图例可读**：图例/标题带半透明白底，压在黑色障碍上也能看清。
 - **可选标题**：`--title` 在底部居中加一行说明（**仅 ASCII**）。
+- **坐标网格**：`--grid 2` 叠加每 2 米一条的世界坐标网格，**可以从图上直接读出任意点的 (x, y)**。
+- **候选点标注**：`--mark "x1,y1;x2,y2"` 画带序号的黄点，上车前确认目标点没标在障碍上。
+- **可只画地图**：不给路径也能跑（`paths` 是可选的）。
 
 ### 用法
 
@@ -159,6 +162,12 @@ python3 tools/plot_path.py assets/plan_zhandui.png --map 战队 "NavFn:/tmp/plan
 
 # ⑤ 调放大倍数（默认 3）
 python3 tools/plot_path.py out.png --scale 4 "NavFn:/tmp/plan_navfn.txt"
+
+# ⑥ 只要地图 + 世界坐标网格（不给路径也能画，用于挑目标点）
+python3 tools/plot_path.py assets/map_rmuc_grid.png --grid 2 --scale 3
+
+# ⑦ 标出候选目标点（带序号的黄点），确认没落在障碍上
+python3 tools/plot_path.py assets/map_rmuc_pick.png --grid 2 --scale 3 --mark "1.5,0;18,3"
 ```
 
 ### 输出示例

@@ -17,6 +17,23 @@
 | `path_smac2d.png` | Smac2D 单图（选中） | 35.55 m / 43 转折 / 1.21 turns·m⁻¹ |
 | `path_compare_three.png` | **三种叠在同一张图**（红=NavFn 蓝=ThetaStar 绿=Smac2D） | 同上三行 |
 
+### 🗺️ 标点用底图
+
+| 文件 | 内容 |
+|---|---|
+| `map_rmuc_grid.png` | **带世界坐标网格的场地底图**（每 2 m 一格，格线上标注世界坐标） |
+
+用途：**上车前挑两个目标点，并确认没标在障碍上**。做法见
+[任务规划.md](../任务规划.md) §十「怎么在地图上标目标点」。
+
+```bash
+cd /workspaces/RMCS/docs/zh-cn/算法组考核
+# ① 生成带网格的底图（上边数字 = x，左边数字 = y）
+python3 tools/plot_path.py assets/map_rmuc_grid.png --grid 2 --scale 3
+# ② 换成你自己选的两个点，标出来确认（坐标因人而异，这个输出不入库）
+python3 tools/plot_path.py assets/map_rmuc_pick.png --grid 2 --scale 3 --mark "1.5,0;18,3"
+```
+
 视觉上一眼可见：
 
 - **NavFn 红线**：锯齿折线（一格一格拐）、贴障碍、绕远 —— 41.53 m 最长

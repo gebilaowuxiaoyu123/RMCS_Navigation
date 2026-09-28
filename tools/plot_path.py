@@ -115,13 +115,17 @@ def main():
     ap = argparse.ArgumentParser(
         description='把规划路径叠加到场地地图上（底图参数自动从 yaml 读）')
     ap.add_argument('output', help='输出的 PNG 路径')
-    ap.add_argument('paths', nargs='+', help='格式 "标签:路径文件"，可给多个')
+    ap.add_argument('paths', nargs='*', help='格式 "标签:路径文件"，可给多个（也可以不给）')
     ap.add_argument('--map', default='rmuc',
                     help='maps/ 下的地图名（默认 rmuc，会读 rmuc.yaml）')
     ap.add_argument('--scale', type=float, default=3.0, help='放大倍数（默认 3）')
     ap.add_argument('--turn-threshold', type=float, default=5.0,
                     help='算作转折的夹角阈值(度)，默认 5')
     ap.add_argument('--title', default='', help='可选：图片底部居中的标题')
+    ap.add_argument('--grid', type=float, default=0.0,
+                    help='叠加世界坐标网格，值为间距(米)，如 2 表示每 2 米一条线')
+    ap.add_argument('--mark', default='',
+                    help='标注候选目标点，格式 "x1,y1;x2,y2"，会画带序号的黄点')
     args = ap.parse_args()
 
     png, res, ox, oy = read_map_yaml(args.map)
@@ -141,6 +145,71 @@ def main():
 
     def to_px(x, y):
         return int(round((x - ox) / res * s)), int(round((h - 1 - (y - oy) / res) * s))
+
+    # 世界坐标网格：叠加后可以直接从图上读出任意点的 (x, y)
+    if args.grid > 0:
+        step = args.grid
+        fsc = 0.4 * max(1, s / 3)
+        pad = int(4 * max(1, s / 3))
+
+        # 网格线走半透明混合：白底变浅灰、黑障碍变深灰，两边都不糊
+        overlay = canvas.copy()
+        gx = [math.ceil(ox / step) * step]
+        while gx[-1] <= ox + w * res:
+            gx.append(round(gx[-1] + step, 9))
+        gy = [math.ceil(oy / step) * step]
+        while gy[-1] <= oy + h * res:
+            gy.append(round(gy[-1] + step, 9))
+        for x in gx:
+            px, _ = to_px(x, 0)
+            cv2.line(overlay, (px, 0), (px, canvas.shape[0]), (60, 60, 60), 1)
+        for y in gy:
+            _, py = to_px(0, y)
+            cv2.line(overlay, (0, py), (canvas.shape[1], py), (60, 60, 60), 1)
+        cv2.addWeighted(overlay, 0.40, canvas, 0.60, 0, canvas)
+
+        # 坐标标签垫白底，保证压在障碍上也读得清
+        def label(text, anchor, up=True):
+            tw, th = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, fsc, 1)[0]
+            x0 = max(0, min(canvas.shape[1] - tw - 2 * pad, anchor[0] + 2))
+            y0 = anchor[1] - th - 2 * pad if up else anchor[1] + pad
+            y0 = max(0, min(canvas.shape[0] - th - 2 * pad, y0))
+            cv2.rectangle(canvas, (x0, y0), (x0 + tw + 2 * pad, y0 + th + 2 * pad),
+                          (255, 255, 255), -1)
+            cv2.putText(canvas, text, (x0 + pad, y0 + pad + th),
+                        cv2.FONT_HERSHEY_SIMPLEX, fsc, (150, 60, 0), 1, cv2.LINE_AA)
+
+        for x in gx:
+            px, _ = to_px(x, 0)
+            label(f'{x:g}', (px, 0), up=False)
+        for y in gy:
+            _, py = to_px(0, y)
+            label(f'{y:g}', (0, py), up=True)
+
+        print(f'已叠加坐标网格：间距 {step:g} m，'
+              f'x∈[{ox:g}, {ox + w * res:.1f}]  y∈[{oy:g}, {oy + h * res:.1f}]')
+
+    # 候选目标点标注
+    if args.mark:
+        for i, item in enumerate(args.mark.split(';'), 1):
+            item = item.strip()
+            if not item:
+                continue
+            try:
+                mx, my = (float(v) for v in item.split(','))
+            except ValueError:
+                print(f'  ⚠️ 跳过标注 "{item}"（格式应为 x,y）')
+                continue
+            mp = to_px(mx, my)
+            cv2.circle(canvas, mp, int(8 * max(1, s / 3)), (0, 0, 0), 2)
+            cv2.circle(canvas, mp, int(4 * max(1, s / 3)), (0, 255, 255), -1)
+            cv2.putText(canvas, str(i), (mp[0] + 12, mp[1] - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7 * max(1, s / 3),
+                        (0, 0, 0), 3, cv2.LINE_AA)
+            cv2.putText(canvas, str(i), (mp[0] + 12, mp[1] - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7 * max(1, s / 3),
+                        (0, 255, 255), 1, cv2.LINE_AA)
+            print(f'  标注 {i}: world({mx:g}, {my:g})  ->  像素 {mp}')
 
     print()
     legend = []
