@@ -133,21 +133,26 @@ python3 tools/costmap_probe.py --node /global_costmap/global_costmap
   所以你改了 yaml（换地图 / 改分辨率），脚本**自动跟随**，不用改代码。
 - **多路径叠加**：同一张底图画多条路径，直接对比换规划器前后的差异。
 - **自动统计**：输出路径点数、长度、转折数、转折密度（turns/m）。
+- **图例可读**：图例/标题带半透明白底，压在黑色障碍上也能看清。
+- **可选标题**：`--title` 在底部居中加一行说明（**仅 ASCII**）。
 
 ### 用法
 
 ```bash
-# ① 先跑规划，把输出存下来
+# ① 先跑规划，把输出存下来（每换一次规划器都要重跑并另存一份）
 ros2 action send_goal /compute_path_to_pose nav2_msgs/action/ComputePathToPose \
   "{goal: {header: {frame_id: world}, pose: {position: {x: 20.0, y: 0.0, z: 0.0}}}, use_start: false}" \
   > /tmp/plan_navfn.txt
 
-# ② 画一张
-python3 tools/plot_path.py assets/navfn_baseline_path.png "NavFn:/tmp/plan_navfn.txt"
+# ② 画一张（--title 可选，只能填英文：cv2 画不了中文）
+python3 tools/plot_path.py assets/path_navfn.png \
+  --title "Global planner: NavFn (baseline)" "NavFn:/tmp/plan_navfn.txt"
 
-# ③ 换规划器后再存一份，两张画在一起对比（验收"效果演示"最有力的材料）
-python3 tools/plot_path.py assets/plan_compare.png \
-  "NavFn:/tmp/plan_navfn.txt" "Smac2D:/tmp/plan_smac2d.txt"
+# ③ 三种画在同一张图（验收"效果演示"最有力的材料）
+#    配色按传参顺序固定：①红 ②蓝 ③绿，所以顺序必须 NavFn → ThetaStar → Smac2D
+python3 tools/plot_path.py assets/path_compare_three.png \
+  --title "Same start & goal - three global planners compared" \
+  "NavFn:/tmp/plan_navfn.txt" "ThetaStar:/tmp/plan_theta.txt" "Smac2D:/tmp/plan_smac2d.txt"
 
 # ④ 换底图（会读对应 yaml 的参数）
 python3 tools/plot_path.py assets/plan_zhandui.png --map 战队 "NavFn:/tmp/plan_navfn.txt"
@@ -165,7 +170,7 @@ python3 tools/plot_path.py out.png --scale 4 "NavFn:/tmp/plan_navfn.txt"
 
   NavFn       823 点   41.53 m   368 转折   8.86 turns/m
 
-已保存: assets/navfn_baseline_path.png
+已保存: assets/path_navfn.png
 ```
 
 ### 图上元素的含义
@@ -175,8 +180,12 @@ python3 tools/plot_path.py out.png --scale 4 "NavFn:/tmp/plan_navfn.txt"
 | 黑白底图 | `maps/*.png`（黑 = 障碍，白 = 可通行） |
 | **绿点** | 路径起点 |
 | **红点** | 路径终点 |
-| **彩色线** | 规划路径（多条时按 红/蓝/绿/紫 区分） |
-| 左上文字 | 图例：路径长度、转折数、转折密度 |
+| **彩色线** | 规划路径（按传参顺序取 红/蓝/绿/紫/黄） |
+| 左上文字 | 图例：路径长度、转折数、转折密度（半透明白底，压在障碍上也看得清） |
+| 底部文字 | `--title` 指定的标题（可选） |
+
+> ⚠️ `--title` 和图例**只能用 ASCII**：`cv2.putText` 不支持中文，填中文会变成方块。
+> 中文说明请写在 Markdown 图注里。
 
 ### 常用地图名
 

@@ -63,8 +63,13 @@ RMCS_Navigation/                  ← 本仓库
 │   ├── virtual_chassis.py           虚拟底盘（让静态环境动起来）
 │   └── README.md                    工具说明
 └── assets/                       ← 演示材料
-    ├── navfn_baseline_path.png      基线路径可视化
-    ├── navfn_baseline_raw.txt       基线原始输出（823 路径点）
+    ├── path_navfn.png               ⭐ 演示套图：NavFn 单张（基线）
+    ├── path_theta_star.png          ⭐ 演示套图：ThetaStar 单张
+    ├── path_smac2d.png              ⭐ 演示套图：Smac2D 单张（选中）
+    ├── path_compare_three.png       ⭐ 演示套图：三种汇总对比（主力材料）
+    ├── navfn_baseline_path.png      早期素材：9.22 首测基线图
+    ├── compare_navfn_vs_smac2d.png  早期素材：两规划器对比（前身）
+    ├── navfn_baseline_raw.txt       基线原始输出（823 路径点，可复现）
     └── README.md                    材料清单
 ```
 

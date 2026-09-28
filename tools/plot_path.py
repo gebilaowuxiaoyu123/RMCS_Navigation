@@ -121,6 +121,7 @@ def main():
     ap.add_argument('--scale', type=float, default=3.0, help='放大倍数（默认 3）')
     ap.add_argument('--turn-threshold', type=float, default=5.0,
                     help='算作转折的夹角阈值(度)，默认 5')
+    ap.add_argument('--title', default='', help='可选：图片底部居中的标题')
     args = ap.parse_args()
 
     png, res, ox, oy = read_map_yaml(args.map)
@@ -170,12 +171,38 @@ def main():
         print(f'  {label:<10s} {len(pts):>4d} 点  {length:6.2f} m  '
               f'{turns:>4d} 转折  {density:5.2f} turns/m')
 
-    # 图例
-    for i, (label, color, npts, length, turns, density) in enumerate(legend):
-        cv2.putText(canvas, f'{label}: {length:.1f}m  {turns} turns  {density:.2f}/m',
-                    (10, int(25 + i * 30 * max(1, s / 3))),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7 * max(1, s / 3),
-                    color, 2, cv2.LINE_AA)
+    # 图例：先铺一层半透明白底，保证压在障碍物上也能看清
+    fs = 0.7 * max(1, s / 3)
+    lh = int(30 * max(1, s / 3))
+    pad = int(8 * max(1, s / 3))
+    lines = [(f'{label}: {length:.1f}m  {turns} turns  {density:.2f}/m', color)
+             for label, color, npts, length, turns, density in legend]
+    if lines:
+        tw = max(cv2.getTextSize(t, cv2.FONT_HERSHEY_SIMPLEX, fs, 2)[0][0]
+                 for t, _ in lines)
+        bw, bh = tw + 2 * pad, lh * len(lines) + 2 * pad
+        roi = canvas[0:bh, 0:bw]
+        roi[:] = (roi * 0.25 + 255 * 0.75).astype('uint8')
+        cv2.rectangle(canvas, (0, 0), (bw, bh), (0, 0, 0), 1)
+        for i, (text, color) in enumerate(lines):
+            cv2.putText(canvas, text,
+                        (pad, pad + i * lh + int(lh * 0.72)),
+                        cv2.FONT_HERSHEY_SIMPLEX, fs, color, 2, cv2.LINE_AA)
+
+    # 标题：底部居中，同样铺白底
+    if args.title:
+        tfs = 0.8 * max(1, s / 3)
+        tw, th = cv2.getTextSize(args.title, cv2.FONT_HERSHEY_SIMPLEX, tfs, 2)[0]
+        x0 = max(0, (canvas.shape[1] - tw) // 2 - pad)
+        y1 = canvas.shape[0]
+        y0 = y1 - th - 3 * pad
+        roi = canvas[y0:y1, x0:min(canvas.shape[1], x0 + tw + 2 * pad)]
+        roi[:] = (roi * 0.25 + 255 * 0.75).astype('uint8')
+        cv2.rectangle(canvas, (x0, y0),
+                      (min(canvas.shape[1] - 1, x0 + tw + 2 * pad), y1 - 1),
+                      (0, 0, 0), 1)
+        cv2.putText(canvas, args.title, (x0 + pad, y1 - 2 * pad),
+                    cv2.FONT_HERSHEY_SIMPLEX, tfs, (0, 0, 0), 2, cv2.LINE_AA)
 
     outdir = os.path.dirname(args.output)
     if outdir:

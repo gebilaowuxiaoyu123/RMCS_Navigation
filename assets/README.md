@@ -5,29 +5,41 @@
 
 ## 现有文件
 
-| 文件 | 内容 | 状态 |
+### ⭐ 主力素材：三种规划器演示套图（统一风格）
+
+四张图**同一组起终点**（`world(0,0)` → `(20,0)`）、**同一张底图**、**同一套画法**，
+可直接放进报告。数据来自 `/tmp/plan_*.txt`（各规划器默认参数实测输出）。
+
+| 文件 | 内容 | 关键数字 |
 |---|---|---|
-| `navfn_baseline_path.png` | **NavFn 基线路径图**：地图 + 路径 + 起终点，可见锯齿折线 | ✅ |
-| `navfn_baseline_raw.txt` | 该次规划的**原始输出**（含 823 个路径点，用于复现） | ✅ |
-| `compare_navfn_vs_smac2d.png` | **NavFn vs Smac2D 对比图**（红=NavFn 锯齿，蓝=Smac2D 平滑） | ✅ |
+| `path_navfn.png` | NavFn 单图（现状基线） | 41.53 m / 368 转折 / 8.86 turns·m⁻¹ |
+| `path_theta_star.png` | ThetaStar 单图 | 35.68 m / 35 转折 / 0.98 turns·m⁻¹ |
+| `path_smac2d.png` | Smac2D 单图（选中） | 35.55 m / 43 转折 / 1.21 turns·m⁻¹ |
+| `path_compare_three.png` | **三种叠在同一张图**（红=NavFn 蓝=ThetaStar 绿=Smac2D） | 同上三行 |
 
-### `compare_navfn_vs_smac2d.png` —— 验收"效果演示"的主力材料
+视觉上一眼可见：
 
-同一组起终点（`world(0,0)` → `(20,0)`）叠在同一张图上：
+- **NavFn 红线**：锯齿折线（一格一格拐）、贴障碍、绕远 —— 41.53 m 最长
+- **ThetaStar 蓝线**：直线段拼接，段少但拐得硬（有 63° 急转角）
+- **Smac2D 绿线**：平滑、走通道中间、最短
 
-| 线 | 规划器 | 长度 | 转折数 | 最大转角 | 急转(>45°) |
-|---|---|---|---|---|---|
-| **红线** | NavFn | 41.53 m | 368 | **179.8°** | **103 次** |
-| **蓝线** | Smac2D | **35.55 m** | 43 | **10.1°** | **0 次** |
-
-视觉上一眼可见：红线**锯齿、贴障碍、绕远**；蓝线**平滑、走通道中间、更短**。
-
-> ⭐这张图还隐含一个关键认知：**转折数少 ≠ 更平滑**。
-> ThetaStar 的转折数（35）比 Smac2D（43）还少，但拐得硬（最大 63°）。
+> ⭐ 这组图隐含一个关键认知：**转折数少 ≠ 更平滑**。
+> ThetaStar 的转折数（35）比 Smac2D（43）**还少**，但拐得硬（最大 63.4°，1 次急转）；
+> Smac2D 最大仅 10.1°、**0 次急转**。对跟踪而言**急转才是顿挫来源**。
 > 详见 [实验记录.md](../实验记录.md) 的 9.28 节与
 > [任务规划.md](../任务规划.md) 阶段 4.5。
 
-### `navfn_baseline_path.png` 里画的是什么
+### 早期素材（过程留痕，风格未统一）
+
+| 文件 | 内容 | 说明 |
+|---|---|---|
+| `navfn_baseline_path.png` | NavFn 基线路径图 | 与 `path_navfn.png` **同一次运行**，无标题栏，是 9.22 首测留下的 |
+| `compare_navfn_vs_smac2d.png` | NavFn vs Smac2D 两图对比 | `path_compare_three.png` 的**两规划器前身**（未含 ThetaStar） |
+| `navfn_baseline_raw.txt` | NavFn 规划的**原始输出**（823 个路径点，用于复现） | 唯一需要保留的原始数据 |
+
+> 报告里统一引用 `path_*` 套图；这三个保留以示"迭代过程"。
+
+### `path_navfn.png` 里画的是什么
 
 它不是导航栈自动产生的，而是用 [tools/plot_path.py](../tools/plot_path.py) 画的：
 
@@ -53,36 +65,51 @@
 
 | 建议命名 | 内容 | 怎么来 |
 |---|---|---|
-| `theta_star_path.png` | ThetaStar 的路径图（补齐三种对比） | 切到 ThetaStar 跑一次，用 `plot_path.py` 画 |
-| `compare_three.png` | **三种画在同一张图** | `plot_path.py` 一次传三条路径 |
 | `plan_rate.png` | `/plan` 频率对比截图 | `ros2 topic hz /plan` |
 | `costmap.png` | 代价地图分布 | `costmap_probe.py` 输出 |
+| `tuned_compare.png` | **调参前 vs 调参后**路径对比 | 阶段 6 调参后再跑一次，用 `plot_path.py` 叠图 |
 | `demo_*.mp4` / `.gif` | 运行录屏 | Foxglove |
 
 ## 命名规范
 
 ```
-<规划器>_<内容>.png     例：navfn_baseline_path.png / smac2d_baseline_path.png
-<规划器>_<内容>.txt     例：navfn_baseline_raw.txt
-compare_<A>_vs_<B>.png  例：compare_navfn_vs_smac2d.png
+path_<规划器>.png          演示套图单张   例：path_navfn.png / path_smac2d.png
+path_compare_<数量>.png    演示套图汇总   例：path_compare_three.png
+compare_<A>_vs_<B>.png     两两对比（早期）例：compare_navfn_vs_smac2d.png
+<规划器>_<内容>.txt        原始数据       例：navfn_baseline_raw.txt
 ```
 
-保持 `<规划器>` 前缀一致，报告里就能成对引用。
+**演示套图统一用 `path_` 前缀**，保证四种规划器的图在文件列表里挨在一起、风格一致。
 
 ## 怎么制作路径图
 
 ```bash
-# ① 跑规划，保存输出
+# ① 跑规划，保存输出（每换一次规划器都要重跑并另存一份）
 ros2 action send_goal /compute_path_to_pose nav2_msgs/action/ComputePathToPose \
   "{goal: {header: {frame_id: world}, pose: {position: {x: 20.0, y: 0.0, z: 0.0}}}, use_start: false}" \
   > /tmp/plan_navfn.txt
 
-# ② 画图
+# ② 画单张（--title 可选，只能填英文：cv2 画不了中文）
 cd /workspaces/RMCS/docs/zh-cn/算法组考核
-python3 tools/plot_path.py assets/navfn_baseline_path.png "NavFn:/tmp/plan_navfn.txt"
+python3 tools/plot_path.py assets/path_navfn.png \
+  --title "Global planner: NavFn (baseline)" \
+  "NavFn:/tmp/plan_navfn.txt"
+
+# ③ 画汇总（一次传多条路径即可叠加）
+python3 tools/plot_path.py assets/path_compare_three.png \
+  --title "Same start & goal - three global planners compared" \
+  "NavFn:/tmp/plan_navfn.txt" \
+  "ThetaStar:/tmp/plan_theta.txt" \
+  "Smac2D:/tmp/plan_smac_default.txt"
 ```
 
-> **关键**：两次对比必须用**同一组起终点**，否则转折数没有可比性。
+**配色是固定的**，按传参顺序取：①红 ②蓝 ③绿 ④紫 ⑤黄。
+所以传参顺序**必须固定为 NavFn → ThetaStar → Smac2D**，否则图文对不上。
+
+> **关键**：三次对比必须用**同一组起终点**，否则转折数没有可比性。
+
+> ⚠️ 图例/标题的中文会变成方块 —— `cv2.putText` 只支持 ASCII。
+> 中文说明写在 Markdown 图注里，不要塞进图片。
 
 ## 怎么制作录屏
 
