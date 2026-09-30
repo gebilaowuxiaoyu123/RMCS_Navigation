@@ -25,8 +25,21 @@
 ## 一页速览
 
 - **任务**：换掉全局规划器（细则禁用 `NavfnPlanner`），调参做到导航无明显卡顿，实现实际场地跨场导航。
-- **选型**：`nav2_smac_planner::SmacPlanner2D`。
-- **理由**：内置路径平滑（治折线转折降速）+ 多分辨率降采样（治大地图规划耗时）+ 显式障碍代价 `cost_penalty`（路径走通道中间）。
+- **选型**：`nav2_smac_planner::SmacPlannerLattice`，`lattice_filepath` 指向 Nav2 自带的 **omni 原语**。
+- **理由**：
+  1. **约束收紧后的唯一可行解**。NavFn 被细则禁用、`SmacPlanner2D` 被追加排除、ThetaStar 弃用；
+     而 `SmacPlannerHybrid` 实测**只支持 `DUBIN` / `REEDS_SHEPP` 两种阿克曼模型**，报错原文：
+     `Invalid motion model for Hybrid A*. Please select between Dubin (Ackermann forward only), Reeds-Shepp (Ackermann forward and back).`
+     ⇒ 用在全向哨兵上等于**强行加转弯半径**。
+  2. **Lattice 的运动模型由 lattice 文件自身决定，而 Nav2 官方就带了 `omni` 原语**：
+     `sample_primitives/5cm_resolution/{0.5m,1m}_turning_radius/omni/output.json`，
+     其 `lattice_metadata.motion_model = "omni"`
+     ⇒ **库存里唯一能原生跑全向的合规候选**。
+     ⚠️ 必须显式给 `lattice_filepath` —— 默认值是 `ackermann` 那份，而且**静默生效、不报错**。
+  3. **代价（待解决）**：lattice 是 5cm 网格、本场代价图是 10cm，Nav2 官方要求两者一致
+     （`lattice_primitives/README.md`：「This should be the same as your costmap resolution.」）。
+- **参考数据（三种规划器同一起终点实测）**：长度 NavFn 41.53 m / ThetaStar 35.68 m / Smac2D 35.55 m；
+  转折数 368 / 35 / 43；最大转角 179.8° / 63.4° / 10.1°。NavFn 与 ThetaStar 均已排除，数据留作对比。
 - **改动位置**：`rmcs-navigation/config/motion.yaml`（纯 yaml 配置，不改 C++）。
 
 ## 完成度
@@ -39,11 +52,15 @@
 | 地图确认（`rmuc-v2.png`，29.2 × 16.1 m） | ✅ |
 | 无机器人测试环境（`static.launch.yaml`，5 节点 `active`） | ✅ |
 | **基线跑通 + 效果观察**（368 转折、`/plan` 0.99 Hz） | ✅ |
-| 方案选型论证（选 `SmacPlanner2D`） | ✅ |
-| 规划器切换实施 | ⏳ |
+| 三种规划器横向实测（NavFn / ThetaStar / Smac2D） | ✅ |
+| 候选可行性核验（`strings` 实测插件支持的 motion model） | ✅ |
+| 方案选型论证（→ `SmacPlannerLattice` + omni 原语） | ✅ |
+| 规划器切换实施（`plugin` / `motion_model` / `lattice_filepath` 三行） | ✅ |
+| 代价图未知区与 `critical_cost` 排查（“白区能到、灰区不动”） | ✅ |
+| `no valid path found` 死循环定位（有电时复现） | ⏳ |
+| lattice 5cm ↔ 代价图 10cm 分辨率对齐 | ⏳ |
 | 调参消除卡顿 | ⏳ |
 | 跨场验证 | ⏳ |
-| Smac2D 对比数据 | ⏳ |
 
 详见 [导航提交作业.md](导航提交作业.md) §4.1。
 
@@ -65,8 +82,8 @@ RMCS_Navigation/                  ← 本仓库
 │   └── README.md                    工具说明
 └── assets/                       ← 演示材料
     ├── path_navfn.png               ⭐ 演示套图：NavFn 单张（基线）
-    ├── path_theta_star.png          ⭐ 演示套图：ThetaStar 单张
-    ├── path_smac2d.png              ⭐ 演示套图：Smac2D 单张（选中）
+    ├── path_theta_star.png          ⭐ 演示套图：ThetaStar 单张（已排除，留作对比）
+    ├── path_smac2d.png              ⭐ 演示套图：Smac2D 单张（已排除，留作对比）
     ├── path_compare_three.png       ⭐ 演示套图：三种汇总对比（主力材料）
     ├── map_zhandui_grid.png         🗺️ 标点用：战队.png（现场图）带世界坐标网格
     ├── navfn_baseline_path.png      早期素材：9.22 首测基线图
@@ -80,7 +97,7 @@ RMCS_Navigation/                  ← 本仓库
 | 仓库 | 内容 |
 |---|---|
 | `gebilaowuxiaoyu123/RMCS_Navigation`（本仓库） | 提交报告、过程规划、配置快照 |
-| `gebilaowuxiaoyu123/rmcs-navigation` | 代码改动（分支 `feat/smac-global-planner`） |
+| `gebilaowuxiaoyu123/rmcs-navigation` | 代码改动（分支 `feat/nav-on-zlq8-5`，基线 `dev/zlq-8-5` + 补 `rmcs_description` 依赖） |
 | `Alliance-Algorithm/rmcs-navigation` | 上游官方（remote 名 `upstream`，仅拉更新） |
 | `gebilaowuxiaoyu123/RMCS_Test` | 作业主仓（最终版提交回此处） |
 
@@ -93,7 +110,16 @@ RMCS_Navigation/                  ← 本仓库
 
 ## 注意
 
-- 依赖栈 `rmcs_ws/src/rmcs-navigation-deps/` 是第三方代码，**不入任何作业仓**（已在 `.gitignore` 中）。- ⚠️ **真车 `sensor.launch.yaml` 硬依赖 `rmcs_localization`**。该包不在默认单包编译范围内，
+- 依赖栈 `rmcs_ws/src/rmcs-navigation-deps/` 是第三方代码，**不入任何作业仓**（已在 `.gitignore` 中）。
+- ⚠️ **规划器候选受「运动学模型」硬限制，但两种 Smac 不一样，别混为一谈**：
+  - `SmacPlannerHybrid` 的运动模型**写死在插件里**，只有 `DUBIN` / `REEDS_SHEPP`（阿克曼）
+    ⇒ 全向底盘**不能用**。报错原文：
+    `Invalid motion model for Hybrid A*. Please select between Dubin (Ackermann forward only), Reeds-Shepp (Ackermann forward and back).`
+  - `SmacPlannerLattice` 的运动模型**写在 `lattice_filepath` 指向的文件里**
+    （`lattice_metadata.motion_model` 可为 `diff` / `omni` / `ackermann`）
+    ⇒ **用 omni 那份就能原生跑全向**。默认是 ackermann 那份，且**静默生效、不报错**。
+  详见 [实验记录.md](实验记录.md) 2026-09-30 条（含该条目的自我修正）。
+- ⚠️ **真车 `sensor.launch.yaml` 硬依赖 `rmcs_localization`**。该包不在默认单包编译范围内，
   漏编会**整个 sensor 栈起不来** —— 表现就是“无 TF / 无 costmap / 无 `/plan`”、
   `base_link` 断链。修法与验证见 [实验记录.md](实验记录.md) 2026-09-29 条。
 - ⚠️ **实车导航入口不带 `foxglove_bridge`**（只有 `static` / `recall` 带），
