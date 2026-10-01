@@ -25,7 +25,11 @@
 ## 一页速览
 
 - **任务**：换掉全局规划器（细则禁用 `NavfnPlanner`），调参做到导航无明显卡顿，实现实际场地跨场导航。
-- **选型**：`nav2_smac_planner::SmacPlannerLattice`，`lattice_filepath` 指向 Nav2 自带的 **omni 原语**。
+- **选型**：`nav2_smac_planner::SmacPlannerLattice`，`lattice_filepath` 指向**本车自建的 10cm 全向原语**
+  `lattice/omni_10cm.json`（`motion_model: omni` / `grid_resolution: 0.1` / 16 航向 / **136 条原语**）。
+  ⚠️ **不用** Nav2 自带的 `sample_primitives` 那份 —— 它是 `grid_resolution = 0.05`，
+  与本场代价图（10cm）对不上。官方 `lattice_primitives/README.md` 原话：
+  “grid_resolution … **This should be the same as your costmap resolution.**”
 - **理由**：
   1. **约束收紧后的唯一可行解**。NavFn 被细则禁用、`SmacPlanner2D` 被追加排除、ThetaStar 弃用；
      而 `SmacPlannerHybrid` 实测**只支持 `DUBIN` / `REEDS_SHEPP` 两种阿克曼模型**，报错原文：
@@ -36,8 +40,10 @@
      其 `lattice_metadata.motion_model = "omni"`
      ⇒ **库存里唯一能原生跑全向的合规候选**。
      ⚠️ 必须显式给 `lattice_filepath` —— 默认值是 `ackermann` 那份，而且**静默生效、不报错**。
-  3. **代价（待解决）**：lattice 是 5cm 网格、本场代价图是 10cm，Nav2 官方要求两者一致
-     （`lattice_primitives/README.md`：「This should be the same as your costmap resolution.」）。
+  3. ~~**代价（待解决）**：lattice 是 5cm 网格、本场代价图是 10cm，Nav2 官方要求两者一致~~
+     ⇒ **已解决**：自己用官方 `generate_motion_primitives.py` 生成了 **10cm** 版本
+     （`lattice/omni_10cm.json`，136 条原语），与代价图分辨率对齐。
+     生成配置与复现步骤见 `lattice/README.md`。
 - **参考数据（三种规划器同一起终点实测）**：长度 NavFn 41.53 m / ThetaStar 35.68 m / Smac2D 35.55 m；
   转折数 368 / 35 / 43；最大转角 179.8° / 63.4° / 10.1°。NavFn 与 ThetaStar 均已排除，数据留作对比。
 - **改动位置**：`rmcs-navigation/config/motion.yaml`（纯 yaml 配置，不改 C++）。
@@ -56,13 +62,23 @@
 | 候选可行性核验（`strings` 实测插件支持的 motion model） | ✅ |
 | 方案选型论证（→ `SmacPlannerLattice` + omni 原语） | ✅ |
 | 规划器切换实施（`plugin` / `motion_model` / `lattice_filepath` 三行） | ✅ |
+| 自建 **10cm** omni 原语（`lattice/omni_10cm.json`，136 条） | ✅ |
 | 代价图未知区与 `critical_cost` 排查（“白区能到、灰区不动”） | ✅ |
-| `no valid path found` 死循环定位（有电时复现） | ⏳ |
-| lattice 5cm ↔ 代价图 10cm 分辨率对齐 | ⏳ |
-| 调参消除卡顿 | ⏳ |
-| 跨场验证 | ⏳ |
+| `no valid path found` 死循环定位 | ✅ |
+| lattice ↔ 代价图分辨率对齐（5cm → **10cm**） | ✅ |
+| **底盘类型纠正**（舵轮而非固定全向，影响 footprint 与运动模型） | ✅ |
+| **重定位链路修复**（`rmcs-localization` submodule 版本对齐 → FIFO 触发打通） | ✅ |
+| **重定位配准修复**（`blue` 初值错 20 m → 改为场地原点） | ✅ |
+| **`train.lua` 端点**（含 `relocalize` / 关小陀螺 / 关自动巡逻） | ✅ |
+| **实车「点两个点能到」验收** | ✅ |
+| 调参消除卡顿（已有 3 组已知坑的参数记录） | ⏳ |
+| 对比录屏 | ⏳ |
 
 详见 [导航提交作业.md](导航提交作业.md) §4.1。
+
+> **初步完成判据**：实车上启用导航后，重定位稳定成功（`fitness ≈ 0.03`，阈值 0.05），
+> `world→odom` 正确发布，在 Foxglove 里点两个点车能到达。
+> 完整过程见 [实验记录.md](实验记录.md) 2026-10-01 各条。
 
 ## 仓库结构
 
@@ -123,4 +139,10 @@ RMCS_Navigation/                  ← 本仓库
   漏编会**整个 sensor 栈起不来** —— 表现就是“无 TF / 无 costmap / 无 `/plan`”、
   `base_link` 断链。修法与验证见 [实验记录.md](实验记录.md) 2026-09-29 条。
 - ⚠️ **实车导航入口不带 `foxglove_bridge`**（只有 `static` / `recall` 带），
-  所以“Foxglove 里没数据”不等于“导航没跑”。详见 [任务规划.md](任务规划.md) §3.7。
+  所以“Foxglove 里没数据”不等于“导航没跑”。详见 [任务规划.md](任务规划.md) §3.7。- 🔴 **地图与实际场地有出入（未解决）**：队长给的扫描图 `maps/战队.png` 有
+  **一处后来放了障碍**，但图上仍是自由区 ⇒ **全局代价图没有 obstacle 层**，
+  会把路径规划穿过去；而局部代价图挂的是 `/local_map`（实时障碍），车开到跟前会被挡。
+  **位置待标注**（可用 `assets/map_zhandui_grid.png`，带世界坐标网格）。
+  详见 [实验记录.md](实验记录.md) 2026-10-01 收尾条目 §二①。
+- ⚠️ **实车跑通有 4 个隐藏前提**（静态栈全绿 ≠ 实车能跑）：端点要选会调 `relocalize()` 的、
+  重定位要成功、不能有小陀螺、目标转发要开。清单见 [任务规划.md](任务规划.md) §四 阶段 8。
