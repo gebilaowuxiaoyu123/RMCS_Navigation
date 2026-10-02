@@ -1,17 +1,31 @@
 #!/usr/bin/env python3
 """读代价地图 + 回读膨胀参数 —— 用于调 inflation 时看清实际效果。
 
-## 为什么不直接用 ros2 topic echo
+## ⚠️ 取值域：发布出来的是 0~100，不是 0~254（2026-10-02 修正）
 
-`nav_msgs/OccupancyGrid.data` 是 **`int8[]`**（有符号 8 位），
-而 nav2 的代价是 **0~254**（无符号语义），所以：
+Nav2 内部代价是 0~254，但 `Costmap2DPublisher` 在**发布前会折到
+`nav_msgs/OccupancyGrid` 的 0~100 标度**，并把两个特殊值钉死：
 
-    254（致命障碍）  -> 显示为 -2
-    253（内切）      -> 显示为 -3
-    255（未知）      -> 显示为 -1
-    252 ~ 128        -> 显示为 -4 ~ -128
+    内部 254（致命障碍 LETHAL_OBSTACLE）        -> 发布 100
+    内部 253（内切 INSCRIBED_INFLATED_OBSTACLE）-> 发布  99
+    内部   0                                     -> 发布   0
+    未知                                         -> 发布  -1
+    其余内部代价 c                               -> 发布 round(c / 255 * 100)
 
-直接看 echo 输出会把"致命障碍"和"未知"搞混。本工具会**还原成 0~254**。
+**本文件早期版本误用了 254 / 253 做判定**，于是永远匹配不上，
+报出「致命 0 / 内切 0」—— 会让人**误以为地图上没有障碍**。已修正。
+
+（`ros2 topic echo` 看到的就是 `int8[]`：-1 = 未知，0~100 = 代价。
+ 早期说明里“254 显示成 -2”是错的 —— 那是**内部**表示，不是发布值。）
+
+实测（2026-10-02，全局代价图 37730 格）：
+`min=0  max=100  取值集合 {0, 89, 92, 93, 96, 99, 100}`
+
+## 怎么判断“膨胀层有没有梯度”（本工具的主要用途）
+
+看输出的「取值集合」：
+  - **只有 0 / 99 / 100** ⇒ 膨胀层**退化成二值图**（没有梯度）
+  - **有一串中间值**（如 89 92 93 96）⇒ 梯度正常
 
 ## 用法
 
@@ -36,10 +50,12 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
 from nav_msgs.msg import OccupancyGrid
 
-# nav2 cost_values.hpp
-LETHAL = 254
-INSCRIBED = 253
-NO_INFO = 255
+# ⚠️ 这是【发布后】的 OccupancyGrid 标度（0~100），不是 Nav2 内部 0~254！
+LETHAL = 100        # 内部 254（LETHAL_OBSTACLE）
+INSCRIBED = 99      # 内部 253（INSCRIBED_INFLATED_OBSTACLE）
+NO_INFO = -1        # 未知
+# 内部值 <-> 发布值 的换算（两个特殊值被钉死，不能用它反推）
+COST_SCALE = 100 / 255.0
 
 # 默认查询点：(x, y, 说明)
 DEFAULT_POINTS = [
@@ -53,11 +69,17 @@ DEFAULT_POINTS = [
 
 
 def decode(raw):
-    """int8 -> 0~255 的无符号代价"""
-    return raw + 256 if raw < 0 else raw
+    """rclpy 的 `int8[]` 给到的是 `array('b')`（有符号）。
+
+    但 Nav2 发布时**已经折到 0~100**：未知 = -1，代价 = 0~100。
+    ⇒ 直接返回即可。（早期版本在这里 `+256` 还原成 0~254，是错的。）
+    """
+    return raw
 
 
 def classify(cost):
+    if cost == NO_INFO:
+        return '未知'
     if cost == LETHAL:
         return '致命障碍'
     if cost == INSCRIBED:
@@ -113,6 +135,20 @@ class CostmapProbe(Node):
             print(f'    {k:<4s} {v:>7d}  ({v / total * 100:5.1f}%)')
         print()
 
+        # ★ 取值集合 —— 判断“膨胀层有没有梯度”的关键（见文件头说明）
+        from collections import Counter
+        cnt = Counter(data)
+        vals = sorted(cnt)
+        print(f'  取值集合（{len(vals)} 种）：')
+        print('    ' + '  '.join(f'{v}({cnt[v]})' for v in vals[:24])
+              + ('  …' if len(vals) > 24 else ''))
+        if set(vals) <= {0, INSCRIBED, LETHAL, NO_INFO}:
+            print('    ⚠️ 只有 0/99/100 ⇒ 膨胀层【退化成二值图】，没有梯度！')
+            print('       多半是 inflation_radius <= footprint 的 inscribed_radius')
+        else:
+            print('    ✅ 有中间值 ⇒ 膨胀层有梯度')
+        print()
+
         # 指定坐标
         print(f"  {'世界(x,y)':>16} {'像素':>12} {'代价':>6}  {'判定'}")
         for x, y, note in self.points:
@@ -128,18 +164,19 @@ class CostmapProbe(Node):
         # 反推：从代价估算到障碍的距离（用于校验 inflation 参数是否生效）
         #   cost = 252 * exp(-k * (d - r_in))   =>   d = r_in + ln(252/cost)/k
         print('  按公式 cost = 252·exp(-k·(d - r_in)) 反推（k 需已知）：')
-        print('    若 k=0.5、r_in=0.1：')
+        print('    若 k=0.5、r_in=0.1：（发布值先折回内部：internal = pub / 100 * 255）')
         for x, y, note in self.points[:3]:
             px = int(round((x - ox) / res))
             py = h - 1 - int(round((y - oy) / res))
             if 0 <= px < w and 0 <= py < h:
-                c = data[py * w + px]
-                if 0 < c < 252:
+                pub = data[py * w + px]
+                internal = pub / COST_SCALE if pub > 0 else pub
+                if 0 < internal < 252:
                     import math
-                    d = 0.1 + math.log(252 / c) / 0.5
-                    print(f'      {str((x, y)):>12}  代价 {c:>3d}  ->  距障碍约 {d:4.2f} m')
+                    d = 0.1 + math.log(252 / internal) / 0.5
+                    print(f'      {str((x, y)):>12}  发布 {pub:>3d}(内部 {internal:6.1f})  ->  距障碍约 {d:4.2f} m')
                 else:
-                    print(f'      {str((x, y)):>12}  代价 {c:>3d}  ->  （不在膨胀区，无法反推）')
+                    print(f'      {str((x, y)):>12}  发布 {pub:>3d}  ->  （不在膨胀区，无法反推）')
         print('    ⚠️ 若反推距离 > inflation_radius，说明 k 与 r_in 不是上面假设的值')
         print('       -> 用 --node 回读真实参数，或 ros2 param get 手动确认')
         print()
