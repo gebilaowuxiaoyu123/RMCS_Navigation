@@ -125,6 +125,13 @@ RMCS_Navigation/                  ← 本仓库
 
 - **过程中**：改动提交到本仓库（`RMCS_Navigation`）
 - **最终版**：同步回 `RMCS_Test`
+- ✅ **飞书提交（已完成）**：《Alliance算法组大作业》
+  `https://fa4g5no1b1f.feishu.cn/wiki/ISJowRRZkiBLvykxXdTc6GiLnhb`
+  正文由 [提交草稿.md](提交草稿.md) 写入（已配图/表格，含目录）。
+- 📄 **要求原文**：《2027赛季算法组培训考核作业细则》
+  `https://fa4g5no1b1f.feishu.cn/docx/GTwtdj07Nou7nLxWF5zcJufHnyf` §3 导航方向
+  —— 「使用 `rmcs-navigation-deps` 控制哨兵，选用**非 `NavfnPlanner`** 的全局规划器实现**跨场导航**，
+  验收需说明**规划器选型逻辑、调参思路**，完成**效果演示**并提交代码至 **GitHub**」
 
 详细流程见 [任务规划.md](任务规划.md) §8。
 
