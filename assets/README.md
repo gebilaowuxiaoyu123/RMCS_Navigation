@@ -5,33 +5,44 @@
 
 ## 现有文件
 
-### ⭐ 主力素材：三种规划器演示套图（统一风格）
+### ⭐ 主力素材：五规划器演示套图（两张地图各一套）
 
-六张图**同一组起终点**、**同一张底图（战队图）**、**同一套画法**，
-可直接放进报告。起终点 `world(23.75, 6.45)` → `(12.85, -3.45)`，
-数据来自 `/tmp/plan_*.txt`（各规划器单独 `configuration` 启动的实测输出）。
+2026-10-03 重画。**两张地图**各一套，每套 6 张
+（1 张五台叠画 + 5 张单图），风格统一，可直接放进报告。
 
-| 文件 | 内容 | 关键数字（战队图） |
+**配色全文统一**：红 = NavFn ｜ 蓝 = ThetaStar ｜ 绿 = Smac2D ｜ 紫 = SmacHybrid ｜ 黄 = SmacLattice
+
+#### `rmuc/` —— RMUC 比赛场地（`maps/rmuc-v2.png`）
+
+起终点 `(12.40, -5.80)` → `(8.10, 5.80)`（直线 12.4 m，**测地约 70 m**，必须绕中央环）。
+画法：`--map rmuc --scale 4 --grid 2`（不裁剪，全图 1168×644）。
+
+| 文件 | 内容 | 关键数字 |
 |---|---|---|
-| `path_navfn.png` | NavFn 单图（现状基线，已禁用） | 15.22 m / 20 转折 / 1.31 turns·m⁻¹ |
-| `path_theta_star.png` | ThetaStar 单图 | 14.89 m / 13 转折 / 0.87 turns·m⁻¹ |
-| `path_smac2d.png` | Smac2D 单图 | 14.76 m / 8 转折 / 0.54 turns·m⁻¹ |
-| `path_smac_hybrid.png` | SmacHybrid 单图（阿克曼，仅作对比） | 16.75 m / 14 转折 / 0.84 turns·m⁻¹ |
-| `path_smac_lattice.png` | **SmacLattice 单图（最终选中）** | 15.92 m / 35 转折 / 2.20 turns·m⁻¹ |
-| `path_compare_all.png` | **五台叠在同一张图**（红=NavFn 蓝=ThetaStar 绿=Smac2D 紫=SmacHybrid 黄=SmacLattice） | 同上五行 |
+| `path_compare_all.png` | **五台叠在同一张图**（主力材料） | — |
+| `path_navfn.png` | NavFn 单图（基线，已禁用） | **54.24 m / 426 转弯 / 7.85 turns·m⁻¹** |
+| `path_thetastar.png` | ThetaStar 单图 | 44.37 m / 34 / 0.77 |
+| `path_smac2d.png` | Smac2D 单图 | 46.01 m / 85 / 1.85 |
+| `path_hybrid.png` | SmacHybrid 单图（阿克曼，仅对比） | 44.57 m / 45 / 1.01 |
+| `path_lattice.png` | **SmacLattice 单图（最终选中）** | 47.99 m / 115 / 2.40 |
 
-> **注意：** 旧图 `path_compare_three.png`（RMUC 底图，3 台）已于 10.03 删除，
-> 由 `path_compare_all.png`（战队图，5 台）取代。后者的重画命令：
->
-> ```bash
-> python3 tools/plot_path.py assets/path_compare_all.png \
->   "NavFn:/tmp/plan_navfn.txt" "ThetaStar:/tmp/plan_thetastar.txt" \
->   "Smac2D:/tmp/plan_smac2d.txt" "SmacHybrid:/tmp/plan_hybrid.txt" \
->   "SmacLattice:/tmp/plan_lattice.txt" \
->   --map 战队 --scale 5 --grid 2 --crop 11.0,-4.2,25.0,7.2 \
->   --legend-pos br --font-scale 0.55 \
->   --title "Five global planners - same start and goal (zhandui map)"
-> ```
+#### `zhandui/` —— 战队训练场（`maps/战队.png`）
+
+起终点 `(8.30, 6.90)` → `(9.60, -2.90)`。
+画法：`--map 战队 --scale 5 --grid 2 --crop=6.0,-4.4,18.0,7.0 --legend-pos br --font-scale 0.4`。
+
+> ⚠️ **这张扫描图是「未完扫」的**：右半边（x > 12）基本空白，真实结构在 x ∈ [-10, 12]。
+> 起终点因此都取在**结构区内**（按 0.50 m clearance 做连通域分析选出的跨度最大一对），
+> 图也裁到结构区（右侧留白就是未扫到的区域）。
+
+| 文件 | 内容 | 关键数字 |
+|---|---|---|
+| `path_compare_all.png` | **五台叠在同一张图** | — |
+| `path_navfn.png` | NavFn 单图 | 12.28 m / 52 转弯 / **4.23 turns·m⁻¹** |
+| `path_thetastar.png` | ThetaStar 单图 | 12.17 m / 10 / 0.82 |
+| `path_smac2d.png` | Smac2D 单图 | 11.97 m / 14 / 1.17 |
+| `path_hybrid.png` | SmacHybrid 单图 | 11.93 m / 14 / 1.17 |
+| `path_lattice.png` | **SmacLattice 单图（最终选中）** | 12.13 m / 16 / 1.32 |
 
 ### 🗺️ 标点用底图
 
@@ -109,13 +120,15 @@ python3 tools/plot_path.py /tmp/zd_pick.png --map 战队 --grid 2 --scale 3 --ma
 ## 命名规范
 
 ```
-path_<规划器>.png          演示套图单张   例：path_navfn.png / path_smac_lattice.png
-path_compare_<范围>.png    演示套图汇总   例：path_compare_all.png（五台叠图）
-compare_<A>_vs_<B>.png     两两对比（早期）例：compare_navfn_vs_smac2d.png
-<规划器>_<内容>.txt        原始数据       例：navfn_baseline_raw.txt
+rmuc/  zhandui/             按地图分子目录（2026-10-03 起）
+  path_<规划器>.png        演示套图单张   例：zhandui/path_navfn.png
+  path_compare_all.png     演示套图汇总   五台叠图
+  path_theta_star.png      ThetaStar 单张（带下划线，和其他单图风格不同）
+compare_<A>_vs_<B>.png       两两对比（早期）例：compare_navfn_vs_smac2d.png
+<规划器>_<内容>.txt         原始数据       例：navfn_baseline_raw.txt
 ```
 
-**演示套图统一用 `path_` 前缀**，保证四种规划器的图在文件列表里挨在一起、风格一致。
+**演示套图统一用 `path_` 前缀、按地图分子目录**，保证同一张地图的图在文件列表里挨在一起、风格一致。
 
 ## 怎么制作路径图
 
@@ -126,32 +139,35 @@ ros2 action send_goal /compute_path_to_pose nav2_msgs/action/ComputePathToPose \
   > /tmp/plan_navfn.txt
 
 # ② 画单张（--title 可选，只能填英文：cv2 画不了中文）
+#    --color N 强制用第 N 色（1红2蓝3绿4紫5黄），单图配色与汇总图一致
 cd /workspaces/RMCS/docs/zh-cn/算法组考核
-python3 tools/plot_path.py assets/path_navfn.png \
-  --title "Global planner: NavFn (baseline)" \
-  "NavFn:/tmp/plan_navfn.txt"
+python3 tools/plot_path.py assets/zhandui/path_lattice.png \
+  --color 5 --title "SmacPlannerLattice - omni (CHOSEN)" \
+  "SmacLattice:/tmp/plancmp/战队/plan_lattice.txt"
 
 # ③ 画汇总（一次传多条路径即可叠加；配色按传参顺序 ①红②蓝③绿④紫⑤黄）
-python3 tools/plot_path.py assets/path_compare_all.png \
-  --title "Same start & goal - five global planners compared" \
-  "NavFn:/tmp/plan_navfn.txt" \
-  "ThetaStar:/tmp/plan_theta.txt" \
-  "Smac2D:/tmp/plan_smac_default.txt" \
-  "SmacHybrid:/tmp/plan_hybrid.txt" \
-  "SmacLattice:/tmp/plan_lattice.txt"
+python3 tools/plot_path.py assets/zhandui/path_compare_all.png \
+  --map 战队 --legend-pos br --font-scale 0.4 \
+  --title "Zhandui - five planners" \
+  "NavFn:/tmp/plancmp/战队/plan_navfn.txt" \
+  "ThetaStar:/tmp/plancmp/战队/plan_thetastar.txt" \
+  "Smac2D:/tmp/plancmp/战队/plan_smac2d.txt" \
+  "SmacHybrid:/tmp/plancmp/战队/plan_hybrid.txt" \
+  "SmacLattice:/tmp/plancmp/战队/plan_lattice.txt"
 
 # ④ 裁剪 + 图例位置 + 字号（地图大、路径只占一小块时用）
-#    --crop       世界坐标矩形 "x0,y0,x1,y1"（米）
+#    --crop       世界坐标矩形 "x0,y0,x1,y1"（米）；以负号开头时必须写 --crop=…
 #    --legend-pos tl|tr|bl|br（图例放哪，标题会自动放到另一侧）
 #    --font-scale 字号缩放（裁剪后画布变小、图例占屏太多就调小）
-python3 tools/plot_path.py assets/path_smac_lattice.png \
-  "SmacLattice:/tmp/plan_lattice.txt" \
-  --map 战队 --scale 5 --grid 2 --crop 11.0,-4.2,25.0,7.2 \
-  --legend-pos br --font-scale 0.55 \
+python3 tools/plot_path.py assets/zhandui/path_lattice.png \
+  "SmacLattice:/tmp/plancmp/战队/plan_lattice.txt" \
+  --map 战队 --scale 5 --grid 2 --crop=6.0,-4.4,18.0,7.0 \
+  --legend-pos br --font-scale 0.4 --color 5 \
   --title "SmacPlannerLattice - omni (CHOSEN)"
 ```
 
-**配色是固定的**，按传参顺序取：①红 ②蓝 ③绿 ④紫 ⑤黄。
+**配色是固定的**，按传参顺序取：①红 ②蓝 ③绿 ④紫 ⑤黄；
+单图想和汇总图对得上就用 `--color N` 指定。
 所以传参顺序**必须固定为 NavFn → ThetaStar → Smac2D**，否则图文对不上。
 
 > **关键**：三次对比必须用**同一组起终点**，否则转折数没有可比性。

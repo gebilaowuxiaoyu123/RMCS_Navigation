@@ -148,15 +148,21 @@ ros2 action send_goal /compute_path_to_pose nav2_msgs/action/ComputePathToPose \
   > /tmp/plan_navfn.txt
 
 # ② 画一张（--title 可选，只能填英文：cv2 画不了中文）
-python3 tools/plot_path.py assets/path_navfn.png \
-  --title "Global planner: NavFn (baseline)" "NavFn:/tmp/plan_navfn.txt"
+#    --color N 强制用第 N 色（1红2蓝3绿4紫5黄），单图就和汇总图配色一致
+python3 tools/plot_path.py assets/zhandui/path_lattice.png \
+  --color 5 --title "SmacPlannerLattice - omni (CHOSEN)" \
+  "SmacLattice:/tmp/plancmp/战队/plan_lattice.txt"
 
 # ③ 多个规划器画在同一张图（验收“效果演示”最有力的材料）
 #    配色按传参顺序固定：①红 ②蓝 ③绿 ④紫 ⑤黄
-python3 tools/plot_path.py assets/path_compare_all.png \
-  --title "Same start & goal - five global planners compared" \
-  "NavFn:/tmp/plan_navfn.txt" "ThetaStar:/tmp/plan_theta.txt" "Smac2D:/tmp/plan_smac2d.txt" \
-  "SmacHybrid:/tmp/plan_hybrid.txt" "SmacLattice:/tmp/plan_lattice.txt"
+python3 tools/plot_path.py assets/zhandui/path_compare_all.png \
+  --map 战队 --legend-pos br --font-scale 0.4 \
+  --title "Zhandui - five planners" \
+  "NavFn:/tmp/plancmp/战队/plan_navfn.txt" \
+  "ThetaStar:/tmp/plancmp/战队/plan_thetastar.txt" \
+  "Smac2D:/tmp/plancmp/战队/plan_smac2d.txt" \
+  "SmacHybrid:/tmp/plancmp/战队/plan_hybrid.txt" \
+  "SmacLattice:/tmp/plancmp/战队/plan_lattice.txt"
 
 # ④ 换底图（会读对应 yaml 的参数）
 python3 tools/plot_path.py assets/plan_zhandui.png --map 战队 "NavFn:/tmp/plan_navfn.txt"
@@ -194,9 +200,9 @@ python3 tools/plot_path.py /tmp/zd_pick.png --map 战队 --grid 2 --scale 3 --ma
 几何参数  : resolution=0.1  origin=(-4.3, -8.0)  <- 读自 rmuc.yaml
 尺寸      : 292x161 px  ->  世界 29.2 x 16.1 m
 
-  NavFn       823 点   41.53 m   368 转折   8.86 turns/m
+  NavFn      1081 点   54.24 m   426 转折   7.85 turns/m
 
-已保存: assets/path_navfn.png
+已保存: assets/rmuc/path_navfn.png
 ```
 
 ### 图上元素的含义
