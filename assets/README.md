@@ -14,35 +14,35 @@
 
 #### `rmuc/` —— RMUC 比赛场地（`maps/rmuc-v2.png`）
 
-起终点 `(12.40, -5.80)` → `(8.10, 5.80)`（直线 12.4 m，**测地约 70 m**，必须绕中央环）。
-画法：`--map rmuc --scale 4 --grid 2`（不裁剪，全图 1168×644）。
+起终点 `(0, 0)` → `(20, 0)`（沿用原来那组）。画法：`--map rmuc --scale 4 --grid 4`（全图 1168×644）。
 
 | 文件 | 内容 | 关键数字 |
 |---|---|---|
 | `path_compare_all.png` | **五台叠在同一张图**（主力材料） | — |
-| `path_navfn.png` | NavFn 单图（基线，已禁用） | **54.24 m / 426 转弯 / 7.85 turns·m⁻¹** |
-| `path_thetastar.png` | ThetaStar 单图 | 44.37 m / 34 / 0.77 |
-| `path_smac2d.png` | Smac2D 单图 | 46.01 m / 85 / 1.85 |
-| `path_hybrid.png` | SmacHybrid 单图（阿克曼，仅对比） | 44.57 m / 45 / 1.01 |
-| `path_lattice.png` | **SmacLattice 单图（最终选中）** | 47.99 m / 115 / 2.40 |
+| `path_navfn.png` | NavFn 单图（基线，已禁用） | **35.55 m / 173 转弯 / 4.87 turns·m⁻¹ / 曲率 32.91·m⁻¹** |
+| `path_thetastar.png` | ThetaStar 单图 | 34.09 m / 25 / 0.73 / 8.24·m⁻¹ |
+| `path_smac2d.png` | Smac2D 单图 | **34.06 m / 46 / 1.35 / 1.53·m⁻¹** |
+| `path_hybrid.png` | SmacHybrid 单图（阿克曼，仅对比） | 37.29 m / 50 / 1.34 / 2.00·m⁻¹ |
+| `path_lattice.png` | **SmacLattice 单图（最终选中）** | 39.95 m / 115 / 2.88 / 15.22·m⁻¹ |
 
 #### `zhandui/` —— 战队训练场（`maps/战队.png`）
 
-起终点 `(8.30, 6.90)` → `(9.60, -2.90)`。
-画法：`--map 战队 --scale 5 --grid 2 --crop=6.0,-4.4,18.0,7.0 --legend-pos br --font-scale 0.4`。
+起终点 `(6.30, 4.40)` → `(1.80, -1.00)`。
+画法：`--map 战队 --scale 5 --grid 2 --crop=-3.5,-4.2,7.5,7.2 --legend-pos br --font-scale 0.45`。
 
-> ⚠️ **这张扫描图是「未完扫」的**：右半边（x > 12）基本空白，真实结构在 x ∈ [-10, 12]。
-> 起终点因此都取在**结构区内**（按 0.50 m clearance 做连通域分析选出的跨度最大一对），
-> 图也裁到结构区（右侧留白就是未扫到的区域）。
+> ⚠️ **这张扫描图是「未完扫」的：右半边（x > 12）是空白，真实结构只在 `x ∈ [-10, 12]`。**
+> 起终点和配图都取在 **`x ∈ [-3.5, 7.5]`** 这块结构区里。
+> **千万别把右半边空白当自由区** —— 那儿没障碍，clearance 分析会误判成「最通畅」，
+> 从而把起终点全选到没扫到的地方（这个坑已踩过，图画出来完全不像我们的场地）。
 
 | 文件 | 内容 | 关键数字 |
 |---|---|---|
 | `path_compare_all.png` | **五台叠在同一张图** | — |
-| `path_navfn.png` | NavFn 单图 | 12.28 m / 52 转弯 / **4.23 turns·m⁻¹** |
-| `path_thetastar.png` | ThetaStar 单图 | 12.17 m / 10 / 0.82 |
-| `path_smac2d.png` | Smac2D 单图 | 11.97 m / 14 / 1.17 |
-| `path_hybrid.png` | SmacHybrid 单图 | 11.93 m / 14 / 1.17 |
-| `path_lattice.png` | **SmacLattice 单图（最终选中）** | 12.13 m / 16 / 1.32 |
+| `path_navfn.png` | NavFn 单图 | **19.58 m / 194 转弯 / 9.91 turns·m⁻¹ / 132 次急转** |
+| `path_thetastar.png` | ThetaStar 单图 | **12.56 m / 15 / 1.19** |
+| `path_smac2d.png` | Smac2D 单图 | 13.26 m / 27 / 2.04 |
+| `path_hybrid.png` | SmacHybrid 单图 | 16.86 m / 52 / 3.08 |
+| `path_lattice.png` | **SmacLattice 单图（最终选中）** | 17.54 m / 58 / 3.31 |
 
 ### 🗺️ 标点用底图
 
