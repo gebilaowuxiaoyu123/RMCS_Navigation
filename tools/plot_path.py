@@ -138,6 +138,10 @@ def main():
                     help='强制用调色板第 N 色（1=红 2=蓝 3=绿 4=紫 5=黄，循环）；'
                          '默认 0 = 按传参顺序自动分配。画单规划器大图时用它，'
                          '配色就和汇总图一致了')
+    ap.add_argument('--two-tone', action='store_true',
+                    help='往返轨迹专用：每条路径按里程中点切成两段，'
+                         '前半用原色（深，去程）、后半用浅色（50%% 淡，回程），'
+                         '并在中点标一个橙色掉头点；图例仍每个规划器一行')
     args = ap.parse_args()
 
     png, res, ox, oy = read_map_yaml(args.map)
@@ -269,8 +273,24 @@ def main():
         length, turns, density = path_stats(pts, args.turn_threshold)
 
         px = [to_px(x, y) for x, y in pts]
-        for j in range(1, len(px)):
-            cv2.line(canvas, px[j - 1], px[j], color, 2, cv2.LINE_AA)
+        if args.two_tone:
+            # 往返轨迹：按里程对半分，前半（去程）原色、后半（回程）浅色
+            cum = [0.0]
+            for k in range(1, len(pts)):
+                cum.append(cum[-1] + math.hypot(pts[k][0] - pts[k - 1][0],
+                                                pts[k][1] - pts[k - 1][1]))
+            half = cum[-1] / 2.0
+            mid = next(k for k in range(len(cum)) if cum[k] >= half)
+            light = tuple(int(c + (255 - c) * 0.55) for c in color)
+            for j in range(1, mid + 1):
+                cv2.line(canvas, px[j - 1], px[j], color, 2, cv2.LINE_AA)
+            for j in range(mid + 1, len(px)):
+                cv2.line(canvas, px[j - 1], px[j], light, 2, cv2.LINE_AA)
+            cv2.circle(canvas, px[mid], 9, (0, 0, 0), 2)        # 掉头点 描边
+            cv2.circle(canvas, px[mid], 6, (0, 140, 255), -1)   # 掉头点 橙
+        else:
+            for j in range(1, len(px)):
+                cv2.line(canvas, px[j - 1], px[j], color, 2, cv2.LINE_AA)
         cv2.circle(canvas, px[0], 7, (0, 200, 0), -1)      # 起点 绿
         cv2.circle(canvas, px[-1], 7, (0, 0, 255), -1)     # 终点 红
 
