@@ -27,22 +27,24 @@
 
 #### `zhandui/` —— 战队训练场（`maps/战队.png`）
 
-起终点 `(4, 2)` → `(0, 0)`（直线 4.47 m）。
-画法：`--map 战队 --scale 5 --grid 2 --crop=-3.5,-4.2,7.5,7.2 --legend-pos br --font-scale 0.45`。
+**往返** `(0, 0)` ⇄ `(4, 2)`（任务要求到终点后还要回起点）。
+两个方向的原始数据：`/tmp/plancmp/战队_0x0_to_4x2`（去程）、`/tmp/plancmp/战队_4x2_to_0x0`（回程），
+拼成往返后放在 `/tmp/plancmp/往返`。
+画法：`--map 战队 --scale 5 --grid 2 --crop=-3.5,-4.2,7.5,7.2 --legend-pos br --font-scale 0.42`。
 
 > ⚠️ **这张扫描图是「未完扫」的：右半边（x > 12）是空白，真实结构只在 `x ∈ [-10, 12]`。**
 > 起终点和配图都取在 **`x ∈ [-3.5, 7.5]`** 这块结构区里。
 > **千万别把右半边空白当自由区** —— 那儿没障碍，clearance 分析会误判成「最通畅」，
 > 从而把起终点全选到没扫到的地方（这个坑已踩过，图画出来完全不像我们的场地）。
 
-| 文件 | 内容 | 关键数字 |
+| 文件 | 内容 | 关键数字（往返） |
 |---|---|---|
 | `path_compare_all.png` | **五台叠在同一张图** | — |
-| `path_navfn.png` | NavFn 单图 | **16.06 m / 122 转弯 / 7.60 turns·m⁻¹ / 49 次急转** |
-| `path_thetastar.png` | ThetaStar 单图 | **13.03 m / 21 / 1.61** |
-| `path_smac2d.png` | Smac2D 单图 | **12.39 m** / 46 / 3.71 |
-| `path_hybrid.png` | SmacHybrid 单图 | **12.39 m** / 41 / 3.31 |
-| `path_lattice.png` | **SmacLattice 单图（最终选中）** | 13.27 m / 37 / 2.79 |
+| `path_navfn.png` | NavFn 单图 | ❌ **去程规划失败**；仅回程 16.01 m / 122 转弯 / 7.62 turns·m⁻¹ |
+| `path_thetastar.png` | ThetaStar 单图 | 26.11 m / 39 转弯 |
+| `path_smac2d.png` | Smac2D 单图 | **24.84 m（最短）** / 87 转弯 |
+| `path_hybrid.png` | SmacHybrid 单图 | 25.07 m / 86 转弯 |
+| `path_lattice.png` | **SmacLattice 单图（最终选中）** | 26.85 m / 79 转弯 |
 
 ### 🗺️ 标点用底图
 
