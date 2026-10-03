@@ -20,7 +20,7 @@
 | `path_smac_lattice.png` | **SmacLattice 单图（最终选中）** | 15.92 m / 35 转折 / 2.20 turns·m⁻¹ |
 | `path_compare_all.png` | **五台叠在同一张图**（红=NavFn 蓝=ThetaStar 绿=Smac2D 紫=SmacHybrid 黄=SmacLattice） | 同上五行 |
 
-> ¡ ï **旧图 `path_compare_three.png`（RMUC 底图，3 台）已于 10.03 删除**，
+> **注意：** 旧图 `path_compare_three.png`（RMUC 底图，3 台）已于 10.03 删除，
 > 由 `path_compare_all.png`（战队图，5 台）取代。后者的重画命令：
 >
 > ```bash
