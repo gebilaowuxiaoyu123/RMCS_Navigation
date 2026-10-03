@@ -10,6 +10,11 @@
 2026-10-03 重画。**两张地图**各一套，每套 6 张
 （1 张五台叠画 + 5 张单图），风格统一，可直接放进报告。
 
+**参数口径**：五个规划器**一律用 Nav2 上游默认参数**（唯一例外：Lattice 的 `change_penalty`
+`0.05 → 1.0`，因为默认值下会给出穿墙路径；见 [导航提交作业.md](../导航提交作业.md) §2.1(3)）。
+真车 `config/motion.yaml` 里那套调好的参数**全程未改**。
+每条路径都拿**底图像素逐格复核过不压墙**（10/10 干净）。
+
 **配色全文统一**：红 = NavFn ｜ 蓝 = ThetaStar ｜ 绿 = Smac2D ｜ 紫 = SmacHybrid ｜ 黄 = SmacLattice
 
 #### `rmuc/` —— RMUC 比赛场地（`maps/rmuc-v2.png`）
@@ -19,17 +24,17 @@
 | 文件 | 内容 | 关键数字 |
 |---|---|---|
 | `path_compare_all.png` | **五台叠在同一张图**（主力材料） | — |
-| `path_navfn.png` | NavFn 单图（基线，已禁用） | **35.55 m / 173 转弯 / 4.87 turns·m⁻¹ / 曲率 32.91·m⁻¹** |
-| `path_thetastar.png` | ThetaStar 单图 | 34.09 m / 25 / 0.73 / 8.24·m⁻¹ |
+| `path_navfn.png` | NavFn 单图（基线，已禁用） | **34.79 m / 91 转弯 / 2.62 turns·m⁻¹ / 曲率 29.28·m⁻¹** |
+| `path_thetastar.png` | ThetaStar 单图 | 34.09 m / **25 转弯** / 0.73 / 8.24·m⁻¹ |
 | `path_smac2d.png` | Smac2D 单图 | **34.06 m / 46 / 1.35 / 1.53·m⁻¹** |
-| `path_hybrid.png` | SmacHybrid 单图（阿克曼，仅对比） | 37.29 m / 50 / 1.34 / 2.00·m⁻¹ |
-| `path_lattice.png` | **SmacLattice 单图（最终选中）** | 39.95 m / 115 / 2.88 / 15.22·m⁻¹ |
+| `path_hybrid.png` | SmacHybrid 单图（阿克曼，仅对比） | **34.06 m / 43 / 1.26 / 2.50·m⁻¹** |
+| `path_lattice.png` | **SmacLattice 单图（最终选中）** | 37.99 m / 74 / 1.95 / 2.70·m⁻¹ |
 
 #### `zhandui/` —— 战队训练场（`maps/战队.png`）
 
 **往返** `(0, 0)` ⇄ `(4, 2)`（任务要求到终点后还要回起点）。
-两个方向的原始数据：`/tmp/plancmp/战队_0x0_to_4x2`（去程）、`/tmp/plancmp/战队_4x2_to_0x0`（回程），
-拼成往返后放在 `/tmp/plancmp/往返`。
+两个方向的原始数据：`/tmp/plancmp/default/战队_0x0_to_4x2`（去程）、`/tmp/plancmp/default/战队_4x2_to_0x0`（回程），
+拼成往返后放在 `/tmp/plancmp/default/往返`。
 画法：`--map 战队 --scale 5 --grid 2 --crop=-3.5,-4.2,7.5,7.2 --legend-pos br --font-scale 0.42`。
 
 > ⚠️ **这张扫描图是「未完扫」的：右半边（x > 12）是空白，真实结构只在 `x ∈ [-10, 12]`。**
@@ -40,16 +45,16 @@
 | 文件 | 内容 | 关键数字（往返） |
 |---|---|---|
 | `path_compare_all.png` | **五台叠在同一张图** | — |
-| `path_navfn.png` | NavFn 单图 | **30.44 m / 213 转弯 / 7.01 turns·m⁻¹**（最长最碎） |
-| `path_thetastar.png` | ThetaStar 单图 | 26.21 m / 39 转弯（转弯最少） |
-| `path_smac2d.png` | Smac2D 单图 | **24.94 m（最短）** / 87 转弯 |
-| `path_hybrid.png` | SmacHybrid 单图 | 25.07 m / 86 转弯 |
-| `path_lattice.png` | **SmacLattice 单图（最终选中）** | 26.85 m / 79 转弯 |
+| `path_navfn.png` | NavFn 单图 | **30.27 m / 216 转弯 / 7.14 turns·m⁻¹**（最长最碎） |
+| `path_thetastar.png` | ThetaStar 单图 | 26.11 m / 39 转弯（转弯最少） |
+| `path_smac2d.png` | Smac2D 单图 | 24.83 m / 87 转弯（次短） |
+| `path_hybrid.png` | SmacHybrid 单图 | **24.55 m（最短）** / 77 转弯 |
+| `path_lattice.png` | **SmacLattice 单图（最终选中）** | 27.37 m / 88 转弯（为了绕开墙多走 2.8 m） |
 
-> ⚠️ **NavFn 参数坑**：用 `use_astar: true` 时**去程 `(0,0)` → `(4,2)` 会规划失败**，
-> 必须用 `use_astar: false`（Dijkstra）。本图集的 NavFn 用的是 Dijkstra。
-> 上报的 NavFn 参数为：`tolerance: 0.5` / `use_astar: false` /
-> `allow_unknown: true` / `use_final_approach_orientation: false`（后三项与上游原版一致）。
+> ⚠️ **NavFn 参数：纯默认（含 `use_astar: true`）**。
+> 早期记的「A\* 会在这条路上规划失败、必须换 Dijkstra」**是错的** ——
+> 当时的根因是**残留的 nav2 进程在抢答同一个 action**，拿到的是别人（甚至空路径）的结果。
+> 跑对比前务必确认 `/compute_path_to_pose` **只有一个** action 服务器。
 
 ### 🗺️ 标点用底图
 
