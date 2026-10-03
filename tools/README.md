@@ -151,11 +151,12 @@ ros2 action send_goal /compute_path_to_pose nav2_msgs/action/ComputePathToPose \
 python3 tools/plot_path.py assets/path_navfn.png \
   --title "Global planner: NavFn (baseline)" "NavFn:/tmp/plan_navfn.txt"
 
-# ③ 三种画在同一张图（验收"效果演示"最有力的材料）
-#    配色按传参顺序固定：①红 ②蓝 ③绿，所以顺序必须 NavFn → ThetaStar → Smac2D
-python3 tools/plot_path.py assets/path_compare_three.png \
-  --title "Same start & goal - three global planners compared" \
-  "NavFn:/tmp/plan_navfn.txt" "ThetaStar:/tmp/plan_theta.txt" "Smac2D:/tmp/plan_smac2d.txt"
+# ③ 多个规划器画在同一张图（验收“效果演示”最有力的材料）
+#    配色按传参顺序固定：①红 ②蓝 ③绿 ④紫 ⑤黄
+python3 tools/plot_path.py assets/path_compare_all.png \
+  --title "Same start & goal - five global planners compared" \
+  "NavFn:/tmp/plan_navfn.txt" "ThetaStar:/tmp/plan_theta.txt" "Smac2D:/tmp/plan_smac2d.txt" \
+  "SmacHybrid:/tmp/plan_hybrid.txt" "SmacLattice:/tmp/plan_lattice.txt"
 
 # ④ 换底图（会读对应 yaml 的参数）
 python3 tools/plot_path.py assets/plan_zhandui.png --map 战队 "NavFn:/tmp/plan_navfn.txt"
@@ -163,10 +164,20 @@ python3 tools/plot_path.py assets/plan_zhandui.png --map 战队 "NavFn:/tmp/plan
 # ⑤ 调放大倍数（默认 3）
 python3 tools/plot_path.py out.png --scale 4 "NavFn:/tmp/plan_navfn.txt"
 
-# ⑥ 只要地图 + 世界坐标网格（不给路径也能画，用于挑目标点）
+# ⑥ 裁剪到世界坐标矩形 "x0,y0,x1,y1"（米）
+#    地图很大、路径只占一小块时，裁剪后细节看得清
+python3 tools/plot_path.py out.png "NavFn:/tmp/plan_navfn.txt" \
+  --map 战队 --scale 5 --crop 11.0,-4.2,25.0,7.2
+
+# ⑦ 图例位置 + 字号（裁剪后画布变小、图例占屏太多时）
+#    --legend-pos tl|tr|bl|br，标题会自动放到另一侧
+python3 tools/plot_path.py out.png "NavFn:/tmp/plan_navfn.txt" \
+  --map 战队 --scale 5 --crop 11.0,-4.2,25.0,7.2 --legend-pos br --font-scale 0.55
+
+# ⑧ 只要地图 + 世界坐标网格（不给路径也能画，用于挑目标点）
 python3 tools/plot_path.py assets/map_zhandui_grid.png --map 战队 --grid 2 --scale 3
 
-# ⑦ 标出候选目标点（带序号的黄点），确认没落在障碍上
+# ⑨ 标出候选目标点（带序号的黄点），确认没落在障碍上
 python3 tools/plot_path.py /tmp/zd_pick.png --map 战队 --grid 2 --scale 3 --mark "14,0;23,0"
 ```
 

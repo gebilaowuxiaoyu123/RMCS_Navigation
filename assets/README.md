@@ -7,15 +7,31 @@
 
 ### ⭐ 主力素材：三种规划器演示套图（统一风格）
 
-四张图**同一组起终点**（`world(0,0)` → `(20,0)`）、**同一张底图**、**同一套画法**，
-可直接放进报告。数据来自 `/tmp/plan_*.txt`（各规划器默认参数实测输出）。
+六张图**同一组起终点**、**同一张底图（战队图）**、**同一套画法**，
+可直接放进报告。起终点 `world(23.75, 6.45)` → `(12.85, -3.45)`，
+数据来自 `/tmp/plan_*.txt`（各规划器单独 `configuration` 启动的实测输出）。
 
-| 文件 | 内容 | 关键数字 |
+| 文件 | 内容 | 关键数字（战队图） |
 |---|---|---|
-| `path_navfn.png` | NavFn 单图（现状基线） | 41.53 m / 368 转折 / 8.86 turns·m⁻¹ |
-| `path_theta_star.png` | ThetaStar 单图 | 35.68 m / 35 转折 / 0.98 turns·m⁻¹ |
-| `path_smac2d.png` | Smac2D 单图（选中） | 35.55 m / 43 转折 / 1.21 turns·m⁻¹ |
-| `path_compare_three.png` | **三种叠在同一张图**（红=NavFn 蓝=ThetaStar 绿=Smac2D） | 同上三行 |
+| `path_navfn.png` | NavFn 单图（现状基线，已禁用） | 15.22 m / 20 转折 / 1.31 turns·m⁻¹ |
+| `path_theta_star.png` | ThetaStar 单图 | 14.89 m / 13 转折 / 0.87 turns·m⁻¹ |
+| `path_smac2d.png` | Smac2D 单图 | 14.76 m / 8 转折 / 0.54 turns·m⁻¹ |
+| `path_smac_hybrid.png` | SmacHybrid 单图（阿克曼，仅作对比） | 16.75 m / 14 转折 / 0.84 turns·m⁻¹ |
+| `path_smac_lattice.png` | **SmacLattice 单图（最终选中）** | 15.92 m / 35 转折 / 2.20 turns·m⁻¹ |
+| `path_compare_all.png` | **五台叠在同一张图**（红=NavFn 蓝=ThetaStar 绿=Smac2D 紫=SmacHybrid 黄=SmacLattice） | 同上五行 |
+
+> ¡ ï **旧图 `path_compare_three.png`（RMUC 底图，3 台）已于 10.03 删除**，
+> 由 `path_compare_all.png`（战队图，5 台）取代。后者的重画命令：
+>
+> ```bash
+> python3 tools/plot_path.py assets/path_compare_all.png \
+>   "NavFn:/tmp/plan_navfn.txt" "ThetaStar:/tmp/plan_thetastar.txt" \
+>   "Smac2D:/tmp/plan_smac2d.txt" "SmacHybrid:/tmp/plan_hybrid.txt" \
+>   "SmacLattice:/tmp/plan_lattice.txt" \
+>   --map 战队 --scale 5 --grid 2 --crop 11.0,-4.2,25.0,7.2 \
+>   --legend-pos br --font-scale 0.55 \
+>   --title "Five global planners - same start and goal (zhandui map)"
+> ```
 
 ### 🗺️ 标点用底图
 
@@ -54,7 +70,7 @@ python3 tools/plot_path.py /tmp/zd_pick.png --map 战队 --grid 2 --scale 3 --ma
 | 文件 | 内容 | 说明 |
 |---|---|---|
 | `navfn_baseline_path.png` | NavFn 基线路径图 | 与 `path_navfn.png` **同一次运行**，无标题栏，是 9.22 首测留下的 |
-| `compare_navfn_vs_smac2d.png` | NavFn vs Smac2D 两图对比 | `path_compare_three.png` 的**两规划器前身**（未含 ThetaStar） |
+| `compare_navfn_vs_smac2d.png` | NavFn vs Smac2D 两图对比 | 已删的 `path_compare_three.png` 的**两规划器前身**（未含 ThetaStar） |
 | `navfn_baseline_raw.txt` | NavFn 规划的**原始输出**（823 个路径点，用于复现） | 唯一需要保留的原始数据 |
 
 > 报告里统一引用 `path_*` 套图；这三个保留以示"迭代过程"。
@@ -93,8 +109,8 @@ python3 tools/plot_path.py /tmp/zd_pick.png --map 战队 --grid 2 --scale 3 --ma
 ## 命名规范
 
 ```
-path_<规划器>.png          演示套图单张   例：path_navfn.png / path_smac2d.png
-path_compare_<数量>.png    演示套图汇总   例：path_compare_three.png
+path_<规划器>.png          演示套图单张   例：path_navfn.png / path_smac_lattice.png
+path_compare_<范围>.png    演示套图汇总   例：path_compare_all.png（五台叠图）
 compare_<A>_vs_<B>.png     两两对比（早期）例：compare_navfn_vs_smac2d.png
 <规划器>_<内容>.txt        原始数据       例：navfn_baseline_raw.txt
 ```
@@ -115,12 +131,24 @@ python3 tools/plot_path.py assets/path_navfn.png \
   --title "Global planner: NavFn (baseline)" \
   "NavFn:/tmp/plan_navfn.txt"
 
-# ③ 画汇总（一次传多条路径即可叠加）
-python3 tools/plot_path.py assets/path_compare_three.png \
-  --title "Same start & goal - three global planners compared" \
+# ③ 画汇总（一次传多条路径即可叠加；配色按传参顺序 ①红②蓝③绿④紫⑤黄）
+python3 tools/plot_path.py assets/path_compare_all.png \
+  --title "Same start & goal - five global planners compared" \
   "NavFn:/tmp/plan_navfn.txt" \
   "ThetaStar:/tmp/plan_theta.txt" \
-  "Smac2D:/tmp/plan_smac_default.txt"
+  "Smac2D:/tmp/plan_smac_default.txt" \
+  "SmacHybrid:/tmp/plan_hybrid.txt" \
+  "SmacLattice:/tmp/plan_lattice.txt"
+
+# ④ 裁剪 + 图例位置 + 字号（地图大、路径只占一小块时用）
+#    --crop       世界坐标矩形 "x0,y0,x1,y1"（米）
+#    --legend-pos tl|tr|bl|br（图例放哪，标题会自动放到另一侧）
+#    --font-scale 字号缩放（裁剪后画布变小、图例占屏太多就调小）
+python3 tools/plot_path.py assets/path_smac_lattice.png \
+  "SmacLattice:/tmp/plan_lattice.txt" \
+  --map 战队 --scale 5 --grid 2 --crop 11.0,-4.2,25.0,7.2 \
+  --legend-pos br --font-scale 0.55 \
+  --title "SmacPlannerLattice - omni (CHOSEN)"
 ```
 
 **配色是固定的**，按传参顺序取：①红 ②蓝 ③绿 ④紫 ⑤黄。

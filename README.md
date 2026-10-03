@@ -101,13 +101,15 @@ RMCS_Navigation/                  ← 本仓库
 │   ├── virtual_chassis.py           虚拟底盘（让静态环境动起来）
 │   └── README.md                    工具说明
 └── assets/                       ← 演示材料
-    ├── path_navfn.png               ⭐ 演示套图：NavFn 单张（基线）
-    ├── path_theta_star.png          ⭐ 演示套图：ThetaStar 单张（已排除，留作对比）
-    ├── path_smac2d.png              ⭐ 演示套图：Smac2D 单张（已排除，留作对比）
-    ├── path_compare_three.png       ⭐ 演示套图：三种汇总对比（主力材料）
+    ├── path_compare_all.png        ⭐ 演示套图：五台规划器汇总对比（主力材料，战队图）
+    ├── path_navfn.png              ⭐ 演示套图：NavFn 单张（基线，已禁用）
+    ├── path_theta_star.png         ⭐ 演示套图：ThetaStar 单张
+    ├── path_smac2d.png             ⭐ 演示套图：Smac2D 单张（已排除，留作对比）
+    ├── path_smac_hybrid.png        ⭐ 演示套图：SmacHybrid 单张（阿克曼，仅对比）
+    ├── path_smac_lattice.png       ⭐ 演示套图：SmacLattice 单张（最终选中）
     ├── map_zhandui_grid.png         🗺️ 标点用：战队.png（现场图）带世界坐标网格
-    ├── navfn_baseline_path.png      早期素材：9.22 首测基线图
-    ├── compare_navfn_vs_smac2d.png  早期素材：两规划器对比（前身）
+    ├── navfn_baseline_path.png      早期素材：9.22 首测基线图（RMUC 底图）
+    ├── compare_navfn_vs_smac2d.png  早期素材：两规划器对比（前身，RMUC 底图）
     ├── navfn_baseline_raw.txt       基线原始输出（823 路径点，可复现）
     └── README.md                    材料清单
 ```

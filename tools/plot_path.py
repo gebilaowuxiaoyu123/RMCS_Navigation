@@ -126,6 +126,14 @@ def main():
                     help='叠加世界坐标网格，值为间距(米)，如 2 表示每 2 米一条线')
     ap.add_argument('--mark', default='',
                     help='标注候选目标点，格式 "x1,y1;x2,y2"，会画带序号的黄点')
+    ap.add_argument('--crop', default='',
+                    help='裁剪画布到世界坐标矩形 "x0,y0,x1,y1"（米）；'
+                         '地图很大但路径只占一小块时，裁剪后细节看得清')
+    ap.add_argument('--legend-pos', default='tl', choices=['tl', 'tr', 'bl', 'br'],
+                    help='图例位置：tl/tr/bl/br，默认 tl；标题会自动放到另一侧')
+    ap.add_argument('--font-scale', type=float, default=1.0,
+                    help='图例/标题字号缩放，默认 1.0；裁剪后画布变小、'
+                         '图例占屏太多时调小，如 0.55')
     args = ap.parse_args()
 
     png, res, ox, oy = read_map_yaml(args.map)
@@ -143,8 +151,34 @@ def main():
                         (int(w * s), int(h * s)),
                         interpolation=cv2.INTER_NEAREST)
 
+    # 世界坐标 -> 放大后画布的原始像素（未裁剪）
+    def raw_px(x):
+        return (x - ox) / res * s
+
+    def raw_py(y):
+        return (h - 1 - (y - oy) / res) * s
+
+    crop_off = [0, 0]
+    if args.crop:
+        try:
+            cx0, cy0, cx1, cy1 = (float(v) for v in args.crop.split(','))
+        except ValueError:
+            raise SystemExit('--crop 格式应为 "x0,y0,x1,y1"')
+        left = max(0, int(math.floor(raw_px(min(cx0, cx1)))))
+        right = min(canvas.shape[1], int(math.ceil(raw_px(max(cx0, cx1)))) + 1)
+        top = max(0, int(math.floor(raw_py(max(cy0, cy1)))))
+        bottom = min(canvas.shape[0], int(math.ceil(raw_py(min(cy0, cy1)))) + 1)
+        if right - left < 2 or bottom - top < 2:
+            raise SystemExit('--crop 区域与地图没有交集')
+        canvas = canvas[top:bottom, left:right]
+        crop_off = [left, top]
+        print(f'已裁剪画布 : world x∈[{ox + left / s * res:.1f}, '
+              f'{ox + right / s * res:.1f}]  y∈[{oy + (h - bottom / s) * res:.1f}, '
+              f'{oy + (h - top / s) * res:.1f}]  ->  {canvas.shape[1]}x{canvas.shape[0]} px')
+
     def to_px(x, y):
-        return int(round((x - ox) / res * s)), int(round((h - 1 - (y - oy) / res) * s))
+        return (int(round(raw_px(x))) - crop_off[0],
+                int(round(raw_py(y))) - crop_off[1])
 
     # 世界坐标网格：叠加后可以直接从图上读出任意点的 (x, y)
     if args.grid > 0:
@@ -241,30 +275,36 @@ def main():
               f'{turns:>4d} 转折  {density:5.2f} turns/m')
 
     # 图例：先铺一层半透明白底，保证压在障碍物上也能看清
-    fs = 0.7 * max(1, s / 3)
-    lh = int(30 * max(1, s / 3))
-    pad = int(8 * max(1, s / 3))
+    k = max(1.0, s / 3) * args.font_scale
+    fs = 0.7 * k
+    lh = max(9, int(30 * k))
+    pad = max(3, int(8 * k))
     lines = [(f'{label}: {length:.1f}m  {turns} turns  {density:.2f}/m', color)
              for label, color, npts, length, turns, density in legend]
     if lines:
         tw = max(cv2.getTextSize(t, cv2.FONT_HERSHEY_SIMPLEX, fs, 2)[0][0]
                  for t, _ in lines)
         bw, bh = tw + 2 * pad, lh * len(lines) + 2 * pad
-        roi = canvas[0:bh, 0:bw]
+        lx = max(0, canvas.shape[1] - bw) if 'r' in args.legend_pos else 0
+        ly = max(0, canvas.shape[0] - bh) if 'b' in args.legend_pos else 0
+        roi = canvas[ly:ly + bh, lx:lx + bw]
         roi[:] = (roi * 0.25 + 255 * 0.75).astype('uint8')
-        cv2.rectangle(canvas, (0, 0), (bw, bh), (0, 0, 0), 1)
+        cv2.rectangle(canvas, (lx, ly), (lx + bw - 1, ly + bh - 1), (0, 0, 0), 1)
         for i, (text, color) in enumerate(lines):
             cv2.putText(canvas, text,
-                        (pad, pad + i * lh + int(lh * 0.72)),
+                        (lx + pad, ly + pad + i * lh + int(lh * 0.72)),
                         cv2.FONT_HERSHEY_SIMPLEX, fs, color, 2, cv2.LINE_AA)
 
-    # 标题：底部居中，同样铺白底
+    # 标题：图例在上时放底部居中，图例在下时放顶部居中，两者不打架
     if args.title:
-        tfs = 0.8 * max(1, s / 3)
+        tfs = 0.8 * k
         tw, th = cv2.getTextSize(args.title, cv2.FONT_HERSHEY_SIMPLEX, tfs, 2)[0]
         x0 = max(0, (canvas.shape[1] - tw) // 2 - pad)
-        y1 = canvas.shape[0]
-        y0 = y1 - th - 3 * pad
+        if args.legend_pos.startswith('b'):
+            y0, y1 = 0, th + 3 * pad
+        else:
+            y1 = canvas.shape[0]
+            y0 = y1 - th - 3 * pad
         roi = canvas[y0:y1, x0:min(canvas.shape[1], x0 + tw + 2 * pad)]
         roi[:] = (roi * 0.25 + 255 * 0.75).astype('uint8')
         cv2.rectangle(canvas, (x0, y0),
