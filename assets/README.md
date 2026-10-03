@@ -193,6 +193,20 @@ python3 tools/plot_path.py assets/zhandui/path_lattice.png \
 - 订阅 `/plan`、`/global_costmap`、`/local_costmap`、`/cmd_vel`
 - 建议两版**并排录**，这是验收"效果演示"最有力的材料
 
+## 调参过程可视化（`assets/tuning/`）
+
+由 `实验记录.md` 里的数据画成，正文 §4 用到。生成脚本支持中文（容器内 `cv2.freetype` + WQY 字体）。
+
+| 文件 | 画的是什么 | 出处 |
+|---|---|---|
+| `tuning_timeline.png` | 调参轨迹：哪个参数在哪天被改成什么（灰=回退 / 橙=反复 / 蓝=定案） | 实验记录 09-29 ~ 10-02 |
+| `tuning_events.png` | 调参期六个大事件时间轴 | 正文 §4.2 |
+| `tuning_thresholds.png` | `inflation_radius` 的两条硬下限（0.258 / 0.364160）与四个用过的值 | 实验记录 10-02 |
+| `tuning_gradient.png` | 膨胀带边缘代价 vs `near_collision_cost`：什么时候还有梯度 | 实验记录 10-02 §结果③ |
+| `tuning_frequency.png` | 配置频率 vs 实测频率、同机 CPU 占用 | 实验记录 10-02 §结果① |
+
+> 图里数字全部来自 `实验记录.md` 的原始表格，没有另外"美化"过。
+
 ## 注意事项
 
 - 视频建议控制在 10 MB 以内；超大可只留 GIF 或关键帧截图。
