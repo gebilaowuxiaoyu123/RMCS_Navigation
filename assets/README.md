@@ -27,7 +27,7 @@
 
 #### `zhandui/` —— 战队训练场（`maps/战队.png`）
 
-起终点 `(6.30, 4.40)` → `(1.80, -1.00)`。
+起终点 `(4, 2)` → `(0, 0)`（直线 4.47 m）。
 画法：`--map 战队 --scale 5 --grid 2 --crop=-3.5,-4.2,7.5,7.2 --legend-pos br --font-scale 0.45`。
 
 > ⚠️ **这张扫描图是「未完扫」的：右半边（x > 12）是空白，真实结构只在 `x ∈ [-10, 12]`。**
@@ -38,11 +38,11 @@
 | 文件 | 内容 | 关键数字 |
 |---|---|---|
 | `path_compare_all.png` | **五台叠在同一张图** | — |
-| `path_navfn.png` | NavFn 单图 | **19.58 m / 194 转弯 / 9.91 turns·m⁻¹ / 132 次急转** |
-| `path_thetastar.png` | ThetaStar 单图 | **12.56 m / 15 / 1.19** |
-| `path_smac2d.png` | Smac2D 单图 | 13.26 m / 27 / 2.04 |
-| `path_hybrid.png` | SmacHybrid 单图 | 16.86 m / 52 / 3.08 |
-| `path_lattice.png` | **SmacLattice 单图（最终选中）** | 17.54 m / 58 / 3.31 |
+| `path_navfn.png` | NavFn 单图 | **16.06 m / 122 转弯 / 7.60 turns·m⁻¹ / 49 次急转** |
+| `path_thetastar.png` | ThetaStar 单图 | **13.03 m / 21 / 1.61** |
+| `path_smac2d.png` | Smac2D 单图 | **12.39 m** / 46 / 3.71 |
+| `path_hybrid.png` | SmacHybrid 单图 | **12.39 m** / 41 / 3.31 |
+| `path_lattice.png` | **SmacLattice 单图（最终选中）** | 13.27 m / 37 / 2.79 |
 
 ### 🗺️ 标点用底图
 
