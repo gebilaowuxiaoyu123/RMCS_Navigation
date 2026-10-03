@@ -40,11 +40,16 @@
 | 文件 | 内容 | 关键数字（往返） |
 |---|---|---|
 | `path_compare_all.png` | **五台叠在同一张图** | — |
-| `path_navfn.png` | NavFn 单图 | ❌ **去程规划失败**；仅回程 16.01 m / 122 转弯 / 7.62 turns·m⁻¹ |
-| `path_thetastar.png` | ThetaStar 单图 | 26.11 m / 39 转弯 |
-| `path_smac2d.png` | Smac2D 单图 | **24.84 m（最短）** / 87 转弯 |
+| `path_navfn.png` | NavFn 单图 | **30.44 m / 213 转弯 / 7.01 turns·m⁻¹**（最长最碎） |
+| `path_thetastar.png` | ThetaStar 单图 | 26.21 m / 39 转弯（转弯最少） |
+| `path_smac2d.png` | Smac2D 单图 | **24.94 m（最短）** / 87 转弯 |
 | `path_hybrid.png` | SmacHybrid 单图 | 25.07 m / 86 转弯 |
 | `path_lattice.png` | **SmacLattice 单图（最终选中）** | 26.85 m / 79 转弯 |
+
+> ⚠️ **NavFn 参数坑**：用 `use_astar: true` 时**去程 `(0,0)` → `(4,2)` 会规划失败**，
+> 必须用 `use_astar: false`（Dijkstra）。本图集的 NavFn 用的是 Dijkstra。
+> 上报的 NavFn 参数为：`tolerance: 0.5` / `use_astar: false` /
+> `allow_unknown: true` / `use_final_approach_orientation: false`（后三项与上游原版一致）。
 
 ### 🗺️ 标点用底图
 
