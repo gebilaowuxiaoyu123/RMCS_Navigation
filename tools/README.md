@@ -174,6 +174,12 @@ python3 tools/plot_path.py out.png "NavFn:/tmp/plan_navfn.txt" \
 python3 tools/plot_path.py out.png "NavFn:/tmp/plan_navfn.txt" \
   --map 战队 --scale 5 --crop 11.0,-4.2,25.0,7.2 --legend-pos br --font-scale 0.55
 
+# ⑦b 强制配色（--color N：1红 2蓝 3绿 4紫 5黄）
+#     画单规划器大图时用它，配色就和汇总图一致了
+python3 tools/plot_path.py out.png "SmacLattice:/tmp/plan_lattice.txt" \
+  --map 战队 --scale 5 --grid 2 --crop 11.0,-4.2,25.0,7.2 \
+  --legend-pos br --font-scale 0.55 --color 5
+
 # ⑧ 只要地图 + 世界坐标网格（不给路径也能画，用于挑目标点）
 python3 tools/plot_path.py assets/map_zhandui_grid.png --map 战队 --grid 2 --scale 3
 

@@ -134,6 +134,10 @@ def main():
     ap.add_argument('--font-scale', type=float, default=1.0,
                     help='图例/标题字号缩放，默认 1.0；裁剪后画布变小、'
                          '图例占屏太多时调小，如 0.55')
+    ap.add_argument('--color', type=int, default=0, metavar='N',
+                    help='强制用调色板第 N 色（1=红 2=蓝 3=绿 4=紫 5=黄，循环）；'
+                         '默认 0 = 按传参顺序自动分配。画单规划器大图时用它，'
+                         '配色就和汇总图一致了')
     args = ap.parse_args()
 
     png, res, ox, oy = read_map_yaml(args.map)
@@ -261,7 +265,7 @@ def main():
             print(f'  ⚠️ 跳过 {label}（未解析出路径点）')
             continue
 
-        color = COLORS[i % len(COLORS)]
+        color = COLORS[((args.color - 1) if args.color > 0 else i) % len(COLORS)]
         length, turns, density = path_stats(pts, args.turn_threshold)
 
         px = [to_px(x, y) for x, y in pts]
