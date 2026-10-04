@@ -8,7 +8,16 @@
 | [`costmap_probe.py`](#costmap_probe-py) | **读代价地图**（正确处理 int8）+ 回读参数，检"假生效" |
 | [`plot_path.py`](#plot_path-py) | **画路径对比图**：把规划结果叠加到地图上，底图参数自动读 yaml |
 | [`virtual_chassis.py`](#virtual_chassis-py) | **虚拟底盘**：让静态环境动起来，可在 Foxglove 看动态过程 |
+## 子目录
 
+| 目录 | 内容 | 备注 |
+|---|---|---|
+| [`plancmp/`](plancmp/) | **五规划器静态对比全链路**：`run_all.py`（驱动）→ `mkroundtrip.py`（往返拼接）→ `metrics3.py`（指标）→ `check_wall.py`（逐格校验）→ `mkfigs.sh`（出图） | 路径走环境变量：`PLANCMP_WORK` / `PLANCMP_MAP` / `RMCS_NAV_SRC` / `RMCS_MAPS_DIR`；用法见 [接手指南.md](../接手指南.md) §7 |
+| [`charts/`](charts/) | `mkcharts_cv.py`：调参过程可视化（`cv2.freetype` 渲染中文，**不用 matplotlib**） | 需要中文字体：`CJK_FONT=<wqy-microhei 路径>` |
+| [`feishu/`](feishu/) | `cors_server.py`（本地静态服务，专供浏览器 `fetch` 取图/取正文）、`mkchunks.py`（正文分块 + 图片占位符） | 仅改飞书文档时需要；踩坑与手法见 [飞书交付指南.md](../飞书交付指南.md) §7–8 |
+
+> ⚠️ `costmap_probe.py` 的取值口径：发布出来的是 **0~100**（内部 254→100、253→99、未知→-1）。
+> 但它取行按"图像顺序"，而 `OccupancyGrid.data[0]` 是**左下角** ⇒ **查单点时纵坐标会反**，留意。
 ---
 
 ## plan_metrics.py
