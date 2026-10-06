@@ -5,3 +5,8 @@ __pycache__/
 # 飞书粘贴用的中间产物（由 /tmp/mkchunks.py 生成）
 .chunks.json
 .imgmap.json
+
+# 表格图片渲染中间产物（不入库）
+.chunks*.json
+.imgmap*.json
+assets/tables/_preview/
