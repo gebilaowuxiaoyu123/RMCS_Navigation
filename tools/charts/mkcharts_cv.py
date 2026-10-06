@@ -72,63 +72,36 @@ def C(img, x, y, r, fill, outline=(255, 255, 255), ow=1.6):
 
 
 # ═══════════════ 图 1 · 调参轨迹 ═══════════════
-DATES = ["09-28", "09-29", "09-30", "10-01", "10-02"]
+DATES = ["9月28日", "9月29日", "9月30日", "10月1日", "10月2日"]
 ROWS = [
-    ("全局规划器 plugin", {1: [("NavFn → SmacHybrid", "churn")], 2: [("→ ThetaStar", "churn")],
-                        3: [("→ SmacLattice  ★ 定案", "keep")]}),
-    ("inflation_radius（全局）", {1: [("0.5 → 0.35", "back")], 2: [("回 0.5", "back")],
-                              3: [("0.5 → 0.30", "keep")], 4: [("→ 0.28", "keep")]}),
-    ("inflation_radius（局部）", {1: [("0.5 → 0.35", "back")], 2: [("回 0.5", "back")],
-                              3: [("0.5 → 0.20（失败）膨胀层退化", "back")], 4: [("0.38（余量 0.016）", "keep")]}),
-    ("cost_scaling_factor", {1: [("0.5 → 3.0 → 1.5", "churn")], 2: [("1.5 → 1.2 → 0.5", "back")],
-                             3: [("局部 1.5 → 0.5", "back")],
-                             4: [("全局 → 1.0 / 局部 0.55", "keep")]}),
-    ("CostCritic.critical_cost", {1: [("120 → 300", "keep")], 2: [("回 120", "back")],
-                                  3: [("120 → 300 ★ 定案", "keep")]}),
-    ("PathAlignCritic.cost_weight", {1: [("0.8 → 3.0", "churn")], 2: [("回 0.8", "back")],
-                                     3: [("0.8 → 5.2", "keep")], 4: [("→ 7.5", "keep")]}),
-    ("non_straight_penalty", {3: [("1.05 → 1.5", "keep")], 4: [("1.5 → 2.0 → 2.4", "keep")]}),
-    ("同一批的其它改动", {2: [("smoother 是死配置，整批回退", "back")],
-                    3: [("xy_goal_tol 0.1→0.25", "keep"), ("tolerance 0.5→0.25", "keep"),
-                        ("footprint 试探后回退", "back")],
-                    4: [("retrospective 0.04", "keep"), ("max_planning_time → 10.0", "keep")]}),
+    ("全局规划器", {0: "NavFn", 1: "Hybrid", 2: "ThetaStar", 3: "Lattice ★"}),
+    ("局部膨胀半径", {0: "0.5", 1: "0.35", 2: "0.2 失败", 3: "回 0.5", 4: "0.38 ★"}),
+    ("衰减系数 CSF", {0: "0.5", 1: "1.5", 2: "回 0.5", 3: "1.5", 4: "0.55 ★"}),
+    ("critical_cost", {0: "120", 1: "300 ★", 2: "回 120", 3: "300 ★"}),
+    ("跟线权重", {0: "0.8", 1: "3.0", 2: "回 0.8", 3: "5.2", 4: "7.5 ★"}),
+    ("其它", {3: "xy_goal 0.25", 4: "tolerance 0.25\nmax_time 10.0"}),
 ]
-CW, LWD, RH = 244, 340, 78
-W1, H1 = LWD + CW * len(DATES) + 30, 124 + RH * len(ROWS) + 56
+LW, CW, RH = 156, 150, 60
+W1, H1 = LW + CW * 5 + 30, 130 + RH * len(ROWS) + 20
 img = canvas(W1, H1)
-T(img, "调参轨迹：谁在哪天被改过、改成了什么", 0, 30, 19, INK, bold=True)
-T(img, "灰 = 试过之后回退　橙 = 反复试值　蓝 = 定案保留　★ = 最终进 motion.yaml　"
-        "（数据来源：实验记录.md / 导航提交作业.md）", 0, 56, 12.5, MUTED)
-T(img, "09-28 基线：plugin=NavFn　全局 inflation 0.5　CSF 0.5　critical_cost 120　"
-        "PathAlign 0.8　xy_goal_tol 0.1　non_straight 1.05", 0, 78, 11.5, (150, 143, 137))
+T(img, "调参轨迹：哪个参数在哪天被改过", 0, 26, 21, INK, bold=True)
+T(img, "蓝 = 最后留下的　灰 = 试过又退回、或反复试过好几个值", 0, 48, 12, MUTED)
 for i, d in enumerate(DATES):
-    T(img, d, LWD + CW * i + 16, 116, 13.5, MUTED, bold=True)
-L(img, LWD - 16, 128, W1 - 30, 128, (203, 198, 193), 1.2)
+    T(img, d, LW + CW * i + 8, 78, 14, MUTED, bold=True)
+L(img, LW - 8, 88, W1 - 24, 88, (203, 198, 193), 1.2)
 for r, (name, cells) in enumerate(ROWS):
-    y = 146 + r * RH
+    y = 106 + r * RH
     if r % 2:
-        R(img, 0, y - 16, W1 - 30, RH - 8, (250, 250, 251))
-    T(img, name, 0, y + 6, 13, INK, bold=True)
+        R(img, 0, y - 14, W1 - 24, RH - 6, (250, 250, 251))
+    T(img, name, 6, y + 8, 14, INK, bold=True)
     for i in range(len(DATES)):
-        if i not in cells:
+        v = cells.get(i, "")
+        if not v:
             continue
-        cx = LWD + CW * i + 16
-        items = cells[i]
-        show = items[:2]
-        yy = y - 14
-        for txt, st in show:
-            col, bg = {"keep": (BLUE, (246, 240, 235)), "back": (GRAY, (245, 245, 246)),
-                       "churn": (ORANGE, (240, 248, 253))}[st]
-            tw = 0
-            for ln in txt.split("\n"):
-                (w_, _), _ = FT.getTextSize(ln, int(11.5 * S), -1)
-                tw = max(tw, w_ / S)
-            R(img, cx, yy, tw + 20, 26, bg)
-            R(img, cx, yy, 4, 26, col)
-            T(img, txt, cx + 12, yy + 18, 11.5, col)
-            yy += 32
-        if len(items) > 2:
-            T(img, f"…共 {len(items)} 项", cx + 4, yy + 14, 11, MUTED)
+        cx = LW + CW * i + 8
+        for k, ln in enumerate(v.split("\n")):
+            keep = "★" in ln
+            T(img, ln, cx, y + 8 + k * 19, 13, BLUE if keep else MUTED, bold=keep)
 cv2.imwrite(f"{OUT}/tuning_timeline.png", img)
 print("图1 完成", img.shape)
 
@@ -197,74 +170,51 @@ T(img, "公式：cost(d) = 252 · e^(−k·(d − r_inscribed))　带边缘 d �
 cv2.imwrite(f"{OUT}/tuning_gradient.png", img)
 print("图3 完成", img.shape)
 
-# ═══════════════ 图 4 · 频率 / 过载 ═══════════════
-W4, H4 = 1560, 500
+# ═══════════════ 图 4 · 实测频率 ═══════════════
+W4, H4 = 940, 420
 img = canvas(W4, H4)
-T(img, "「卡顿」的实测证据：不是频率配高了，是系统追不上", 0, 32, 19, INK, bold=True)
-T(img, "2026-10-02 实车在线实测（ros2 topic hz / ps）", 0, 58, 12.5, MUTED)
-LX, LY, LH = 90, 120, 250
-L(img, LX, LY + LH, LX + 620, LY + LH, (198, 192, 186), 1.6)
-BARS = [("局部代价图", 10, 8.13), ("全局代价图", 5, 3.28), ("/plan", 1.0, 0.974)]
+T(img, "实测频率与配置频率", 0, 30, 21, INK, bold=True)
+T(img, "2026年10月2日 实车在线实测（ros2 topic hz）", 0, 52, 12, MUTED)
+LX, LY, LH = 90, 110, 210
+L(img, LX, LY + LH, LX + 700, LY + LH, (198, 192, 186), 1.6)
+BARS = [("局部代价图", 10, 8.13), ("全局代价图", 5, 3.28), ("规划 /plan", 1.0, 0.974)]
 for i, (lab, cfg, act) in enumerate(BARS):
-    x = LX + 60 + i * 200
+    x = LX + 50 + i * 230
     hc, ha = (cfg / 10.0) * LH, (act / 10.0) * LH
-    R(img, x, LY + LH - hc, 62, hc, (243, 231, 219))
-    R(img, x + 70, LY + LH - ha, 62, ha, BLUE if act >= cfg * 0.97 else ORANGE,
-      alpha=0.9)
-    T(img, f"配置 {cfg}", x + 31, LY + LH - hc - 10, 12, MUTED, "m")
-    T(img, f"{act}", x + 101, LY + LH - ha - 10, 13, INK, "m", bold=True)
-    T(img, lab, x + 66, LY + LH + 26, 12.5, INK, "m", bold=True)
+    R(img, x, LY + LH - hc, 66, hc, (243, 231, 219))
+    R(img, x + 78, LY + LH - ha, 66, ha, BLUE if act >= cfg * 0.97 else ORANGE, alpha=0.9)
+    T(img, f"配置 {cfg}", x + 33, LY + LH - hc - 10, 12, MUTED, "m")
+    T(img, f"{act}", x + 111, LY + LH - ha - 10, 13, INK, "m", bold=True)
+    T(img, lab, x + 72, LY + LH + 26, 12.5, INK, "m", bold=True)
 T(img, "Hz", LX, LY - 10, 12, MUTED)
-T(img, "灰 = 配置值　蓝/橙 = 实测值　⚠ 两个代价图都没追上配置", LX + 620, LY + LH + 56, 12, MUTED, "r")
-texts = [("rmcs_local_map 每帧全量重算 402×402（16.1 m @ 0.04）", 0)]
-RX, RY = 810, 130
-T(img, "同机 CPU 占用（ps 排序，%CPU）", RX, RY - 12, 13.5, INK, bold=True)
-CPU = [("rmcs_executor", 36.3, BLUE), ("python3 (foxglove 等)", 27.9, GRAY),
-       ("rmcs_local_map", 27.2, ORANGE), ("livox_ros_driver", 12.8, GRAY),
-       ("pointlio_mapping", 8.7, GRAY)]
-for i, (n, v, c) in enumerate(CPU):
-    y = RY + 12 + i * 44
-    T(img, n, RX, y + 14, 12.5, INK)
-    R(img, RX + 250, y, (v / 40.0) * 380, 22, c, alpha=0.9)
-    T(img, f"{v}%", RX + 250 + (v / 40.0) * 380 + 10, y + 17, 12, MUTED)
-T(img, "⇒ 结论：不是把频率配高，而是系统过载、追不上配的频率", 0, H4 - 18, 13, INK, bold=True)
+T(img, "浅色 = 配置值　深色 = 实测值", LX, LY + LH + 56, 12, MUTED)
 cv2.imwrite(f"{OUT}/tuning_frequency.png", img)
 print("图4 完成", img.shape)
 
-# ═══════════════ 图 5 · 大事件时间轴 ═══════════════
-EV = [("09-29", ["窄口三刀", "inflation → CSF → critical_cost"], ["前两刀毫无反应", "第三刀才撞出真正的耦合"], ORANGE),
-      ("09-30", ["「摆」不在规划层", "smoother 是死配置"], ["整批调参回退", "改为先定机制再定参数"], RED),
-      ("10-01", ["两种「整栈起不来」", "plugin 被清空 / 参数写成整数"], ["从 unconfigured 倒查", "此后改完先扫参数类型"], RED),
-      ("10-01", ["重定位两个 bug 叠加", "fitness 0.2832 → 0.0361"], ["ICP 只搜 yaw", "初值错 20 m 必滑向假解"], BLUE),
-      ("10-02", ["三道硬阈值定案", "inflation 两条下限 + CSF 上限"], ["一个参数同时造成", "掉频与零梯度"], GREEN),
-      ("10-03", ["Lattice 默认参数穿墙", "残留进程会「抢答」实验"], ["裸算法对比先做", "「只有一个 action 服务器」"], BLUE)]
-W5, H5 = 1560, 520
+# ═══════════════ 图 5 · 大事件（只按时间排列，不做因果连线） ═══════════════
+EV = [
+    ("9月29日", "窄口三刀", "前两刀毫无反应", ORANGE),
+    ("9月30日", "「摆」不在规划层", "改成 normal", RED),
+    ("10月1日", "两种「整栈起不来」", "plugin 清空、参数写错", RED),
+    ("10月1日", "重定位两个 bug", "初值错 20 m", BLUE),
+    ("10月2日", "膨胀半径的连锁", "0.28 改 0.38", GREEN),
+]
+W5, H5 = 1000, 275
 img = canvas(W5, H5)
-T(img, "调参期「大事件」时间轴", 0, 32, 19, INK, bold=True)
-T(img, "每个事件的 现象 / 后果 / 原因 / 对后续调参的影响，详见正文 §4.2", 0, 58, 12.5, MUTED)
-AXIS = 265
-L(img, 60, AXIS, 1520, AXIS, (198, 192, 186), 2.2)
-step = 1460 / len(EV)
-for i, (d, title, impact, col) in enumerate(EV):
-    x = 60 + step * (i + 0.5)
-    up = i % 2 == 0
-    C(img, x, AXIS, 7, col)
-    T(img, d, x, AXIS + 26, 12, MUTED, "m", bold=True)
-    h_title, h_imp, gap = len(title) * 22, len(impact) * 19, 8
-    block = h_title + gap + h_imp
-    if up:
-        y0 = AXIS - 78 - block          # 文字块顶
-        L(img, x, AXIS, x, y0 + block + 10, col, 1.4)
-        for j, s in enumerate(title):
-            T(img, s, x, y0 + 16 + j * 22, 13, INK, "m", bold=(j == 0))
-        for j, s in enumerate(impact):
-            T(img, s, x, y0 + h_title + gap + 15 + j * 19, 11.5, MUTED, "m")
-    else:
-        y0 = AXIS + 78
-        L(img, x, AXIS, x, y0 - 12, col, 1.4)
-        for j, s in enumerate(title):
-            T(img, s, x, y0 + 16 + j * 22, 13, INK, "m", bold=(j == 0))
-        for j, s in enumerate(impact):
-            T(img, s, x, y0 + h_title + gap + 15 + j * 19, 11.5, MUTED, "m")
+T(img, "调参期发生的几件事", 0, 26, 21, INK, bold=True)
+T(img, "只按时间排列，事件之间没有因果关系", 0, 48, 12, MUTED)
+AXIS = 92
+L(img, 30, AXIS, 970, AXIS, (203, 198, 193), 1.6)
+step = 940.0 / len(EV)
+CW5 = step - 16
+for i, (d, t1, t2, col) in enumerate(EV):
+    x = 30 + step * i
+    C(img, x + CW5 / 2, AXIS, 5, col)
+    R(img, x, AXIS + 18, CW5, 116, (250, 250, 251), outline=(235, 232, 230))
+    R(img, x, AXIS + 18, CW5, 4, col)
+    T(img, d, x + 10, AXIS + 44, 12.5, col, bold=True)
+    T(img, t1, x + 10, AXIS + 68, 12.5, INK, bold=True)
+    for k, ln in enumerate([t2[j:j + 12] for j in range(0, len(t2), 12)]):
+        T(img, ln, x + 10, AXIS + 90 + k * 17, 11.5, MUTED)
 cv2.imwrite(f"{OUT}/tuning_events.png", img)
 print("图5 完成", img.shape)
